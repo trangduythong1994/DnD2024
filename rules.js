@@ -10,7 +10,12 @@ const entry = (name, description, page, extra = {}) => ({
   ...extra,
 });
 export const library = {
-  class: [["Cleric", 36], ["Fighter", 47], ["Rogue", 61], ["Wizard", 77]].map(([name, p]) =>
+  class: [
+    ["Cleric", 36],
+    ["Fighter", 47],
+    ["Rogue", 61],
+    ["Wizard", 77],
+  ].map(([name, p]) =>
     entry(
       name,
       `The 2024 ${name} class. Refer to the source class table to enter Hit Dice, proficiencies, features, spells, and level resources. This tool does not grant these benefits automatically.`,
@@ -153,6 +158,6 @@ export const library = {
 };
 library.originFeat = library.feats.filter((f) => f.category === "Origin");
 export const manualNotice =
-  "Choices only store references. Review final ability scores, proficiencies, Origin Feat, traits, equipment, HP, and related spells yourself. No benefit is added, removed, or stacked automatically.";
+  "Choices only store references. Review final ability scores, proficiencies, feats, traits, equipment, HP, and related spells yourself. No benefit is added, removed, or stacked automatically.";
 export const attribution =
   "This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.";

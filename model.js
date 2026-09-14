@@ -128,11 +128,7 @@ export function newEntry() {
   };
 }
 function fail(path) {
-  throw new Error(
-    "Invalid data at “" +
-      path +
-      "”. Import a file exported by this Character Sheet.",
-  );
+  throw new Error("Invalid saved data at “" + path + "”.");
 }
 function checkShape(value, template, path) {
   if (typeof template === "number") {

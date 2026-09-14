@@ -10,8 +10,8 @@ import {
   newEntry,
   parseBackup,
   totalWeight,
-} from "./model.js?v=3";
-import { library, SRD, manualNotice, attribution } from "./rules.js?v=3";
+} from "./model.js?v=5";
+import { library, SRD, manualNotice, attribution } from "./rules.js?v=5";
 const $ = (s) => document.querySelector(s);
 const KEY = "dnd2024.character.v1",
   DRAFT_KEY = "dnd2024.editor-draft.v1";
@@ -141,8 +141,11 @@ try {
   const raw = localStorage.getItem(KEY);
   if (raw) character = parseBackup(raw);
   if (character.originFeat) {
-    character.feats.push(character.originFeat);
+    if (!character.feats.some((feat) => feat.name === character.originFeat.name)) {
+      character.feats.push(character.originFeat);
+    }
     character.originFeat = null;
+    save();
   }
 } catch (error) {
   storageBlocked = true;
@@ -266,7 +269,7 @@ function renderReference() {
 }
 function sourceLink(target, e) {
   if (e.source.startsWith("SRD 5.2.1")) {
-    const page = e.source.match(/tr\. (\d+)/)?.[1];
+    const page = e.source.match(/p\.\s*(\d+)/)?.[1];
     target.append(
       el(
         "a",
@@ -286,7 +289,8 @@ $("#close-reference").onclick = () => {
 };
 function choice(kind) {
   const entry = character[kind];
-  const subclassLocked = kind === "subclass" && (character.level < 3 || !character.class);
+  const subclassLocked =
+    kind === "subclass" && (character.level < 3 || !character.class);
   return el(
     "div",
     { class: "choice" },
@@ -294,10 +298,15 @@ function choice(kind) {
     el(
       "div",
       { class: "choice-line" },
-      button(entry?.name || (subclassLocked ? "Available at level 3" : "＋ Choose"), () => openPicker(kind), "", {
-        "aria-label": "Choose " + names[kind],
-        disabled: subclassLocked,
-      }),
+      button(
+        entry?.name || (subclassLocked ? "Available at level 3" : "＋ Choose"),
+        () => openPicker(kind),
+        "",
+        {
+          "aria-label": "Choose " + names[kind],
+          disabled: subclassLocked,
+        },
+      ),
       entry
         ? button("ⓘ", () => showEntry(kind, entry.id), "text-button", {
             "aria-label": "View " + names[kind],
@@ -642,12 +651,7 @@ function itemCard(kind, e) {
   return box;
 }
 async function removeEntry(kind, id) {
-  if (
-    !(await confirmAction(
-      "Delete this entry from the character?",
-    ))
-  )
-    return;
+  if (!(await confirmAction("Delete this entry from the character?"))) return;
   if (singles.includes(kind)) {
     character[kind] = null;
     if (kind === "class") character.subclass = null;
@@ -830,16 +834,29 @@ function features() {
 function feats() {
   return [
     head("Feats"),
-    hint("Select multiple feats below. Benefits are applied manually."),
-    el("div", { class: "grid" }, library.feats.map((entry) => {
-      const input = el("input", { type: "checkbox", checked: character.feats.some(f => f.name === entry.name), onchange: () => {
-        if (input.checked) character.feats.push({ ...newEntry(), ...entry });
-        else character.feats = character.feats.filter(f => f.name !== entry.name);
-        save(); render();
-      }});
-      return el("label", { class: "check" }, input, entry.name);
-    })),
-    ...listSection("feats"),
+    hint("Select any number of library feats. Benefits are applied manually."),
+    el(
+      "div",
+      { class: "grid" },
+      library.feats.map((entry) => {
+        const input = el("input", {
+          type: "checkbox",
+          checked: character.feats.some((f) => f.name === entry.name),
+          onchange: () => {
+            if (input.checked)
+              character.feats.push({ ...newEntry(), ...entry });
+            else
+              character.feats = character.feats.filter(
+                (f) => f.name !== entry.name,
+              );
+            save();
+            render();
+          },
+        });
+        return el("label", { class: "check" }, input, entry.name);
+      }),
+    ),
+    ...listSection("feats", "Selected & custom feats"),
   ];
 }
 function origin() {
@@ -989,7 +1006,9 @@ function acceptInput(target) {
     if (value < 3) character.subclass = null;
     const control = document.querySelector('[aria-label="Choose Subclass"]');
     control.disabled = value < 3 || !character.class;
-    control.textContent = character.subclass?.name || (value < 3 ? "Available at level 3" : "＋ Choose");
+    control.textContent =
+      character.subclass?.name ||
+      (value < 3 ? "Available at level 3" : "＋ Choose");
   }
   if (path === "combat.maxHp")
     character.combat.hp = Math.min(character.combat.hp, value);
@@ -1129,6 +1148,7 @@ async function openPicker(kind, entry = null) {
     previous = JSON.parse(localStorage.getItem(draftKey()));
   } catch {}
   if (
+    !restricted &&
     previous?.kind === kind &&
     previous.editing === Boolean(entry) &&
     (!entry || previous.entry?.id === entry.id) &&
@@ -1149,12 +1169,14 @@ async function openPicker(kind, entry = null) {
   }
 }
 function renderResults() {
-  const q = $("#search").value.trim().toLocaleLowerCase("vi");
-  const entries = (library[pickerContext.kind] || []).filter((e) =>
-    e.name.toLocaleLowerCase("vi").includes(q),
-  ).filter((e) =>
-    pickerContext.kind !== "subclass" || e.category === character.class?.name,
-  );
+  const q = $("#search").value.trim().toLocaleLowerCase("en");
+  const entries = (library[pickerContext.kind] || [])
+    .filter((e) => e.name.toLocaleLowerCase("en").includes(q))
+    .filter(
+      (e) =>
+        pickerContext.kind !== "subclass" ||
+        e.category === character.class?.name,
+    );
   $("#results").replaceChildren(
     ...(entries.length
       ? entries.map((e) =>
@@ -1226,8 +1248,16 @@ $("#picker").oncancel = (e) => {
 };
 async function commitEntry(entry) {
   const kind = pickerContext.kind;
-  if (kind === "class" && !library.class.some(e => e.name === entry.name)) return;
-  if (kind === "subclass" && (character.level < 3 || !library.subclass.some(e => e.name === entry.name && e.category === character.class?.name))) return;
+  if (kind === "class" && !library.class.some((e) => e.name === entry.name))
+    return;
+  if (
+    kind === "subclass" &&
+    (character.level < 3 ||
+      !library.subclass.some(
+        (e) => e.name === entry.name && e.category === character.class?.name,
+      ))
+  )
+    return;
   if (!entry.name.trim()) {
     notify("Enter an entry name.");
     return;
@@ -1258,7 +1288,8 @@ async function commitEntry(entry) {
     if (entry[key] !== undefined) safe[key] = entry[key];
   if (singles.includes(kind)) {
     character[kind] = safe;
-    if (kind === "class" && character.subclass?.category !== safe.name) character.subclass = null;
+    if (kind === "class" && character.subclass?.category !== safe.name)
+      character.subclass = null;
     character.reviewNeeded = true;
   } else if (pickerContext.editing) {
     const i = character[kind].findIndex((e) => e.id === entry.id);
@@ -1280,7 +1311,7 @@ $("#custom-form").onsubmit = (e) => {
 $("#about").onclick = () =>
   showInfo(
     "Rules & guide",
-    "Start with a name, class, origin, and final ability scores. The two panels have independent tabs. Select a name or statistic to view its reference; use Add or Edit to update entries.\n\nCalculated: modifiers, PB by total level, skill/save bonuses, Initiative from DEX plus adjustment, passive Perception, spell attack/DC, and total item weight.\n\nManual: AC, HP, Hit Dice, rests, granted skills, background/species/class/feat benefits, spell slots, prepared limit, Pact Magic, and secondary spell sources. There is no automatic character builder or multiclassing.\n\nThe library is a verified subset: 12 classes and subclasses (references), Human, four backgrounds, five feats (four Origin), Potent Cantrip, Resourceful, Dagger, Club, Fire Bolt, and Cure Wounds. Every category supports custom entries. The English SRD source takes priority.\n\n" +
+    "Start with a name, one of the four available classes, origin, and final ability scores. Subclasses unlock at level 3 and are filtered by class. The two panels have independent tabs. Select a name or statistic to view its reference; use Add or Edit to update entries.\n\nCalculated: modifiers, PB by total level, skill/save bonuses, Initiative from DEX plus adjustment, passive Perception, spell attack/DC, and total item weight.\n\nManual: AC, HP, Hit Dice, rests, granted skills, background/species/class/feat benefits, spell slots, prepared limit, Pact Magic, and secondary spell sources. There is no automatic character builder or multiclassing.\n\nThe verified SRD subset contains Cleric, Fighter, Rogue, Wizard and one subclass for each; Human; four backgrounds; five feats; Potent Cantrip; Resourceful; Dagger; Club; Fire Bolt; and Cure Wounds. Most categories support custom entries. The English SRD source takes priority.\n\n" +
       attribution +
       "\n\nEscape closes dialogs and keeps editing drafts. Data is stored only in this browser.",
   );

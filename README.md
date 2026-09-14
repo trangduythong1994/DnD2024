@@ -1,72 +1,71 @@
-# DnD2024
+# DnD2024 Character Sheet
 
-Character Sheet tiếng Việt cho D&D 2024: website tĩnh, không tài khoản người chơi, không backend, lưu trên trình duyệt.
+An English, browser-based character sheet for the 2024 Dungeons & Dragons rules. It is a static website with no account, backend, or cloud sync.
 
-Website: https://trangduythong1994.github.io/DnD2024/
+Live site: https://trangduythong1994.github.io/DnD2024/
 
-## Sử dụng
+## Using the sheet
 
-1. Nhập tên, level, chọn Class / Subclass / Species / Background / Origin Feat.
-2. Nhập **ability scores cuối cùng**: đã gồm bonus background, feat và mọi thay đổi. Không có bonus nguồn nào tự cộng.
-3. Các tab trái và phải độc lập. Bấm tên/chỉ số để mở tham chiếu; bấm Thêm/Sửa để thay đổi mục. Popup tìm theo tên, xem trước và hỗ trợ custom.
-4. Gán proficiency/expertise, nhập combat, inventory, spell slots và prepared spells. Không tự tiêu hao slot khi thêm phép.
-5. Tự lưu mỗi lần nhập hợp lệ. Xuất JSON thường xuyên để sao lưu/chuyển máy. Nhập file hoặc dán JSON sẽ được kiểm tra và yêu cầu xác nhận thay thế.
+1. Enter the character and player details, level, class, subclass, species, and background.
+2. Enter final ability scores after any background, feat, or other adjustments. The sheet does not apply those adjustments automatically.
+3. Use the left and right tab groups independently. Select names and scores to open their rules references.
+4. Select any number of feats from the Feats tab, or add custom feats.
+5. Record proficiencies, combat values, equipment, spell slots, and prepared spells.
 
-Escape đóng popup; bản nháp editor được giữ để khôi phục lần mở cùng loại mục tiếp theo. Escape đóng panel tham chiếu. Dùng phím mũi tên/Home/End trong mỗi tablist. Không có đồng bộ đám mây; xóa dữ liệu trình duyệt có thể xóa nhân vật.
+Every valid change is saved to this browser. **New Character** clears the current sheet after confirmation. Clearing browser data can remove the character permanently.
 
-## Tự động và thủ công
+## Rules behavior
 
-Tự tính ability modifier, PB theo tổng level 1–20, skill/save bonus (expertise chỉ cho skills), Initiative = DEX modifier + bổ sung, passive Perception, spell attack/DC, tổng trọng lượng vật phẩm. Các ô bổ sung chấp nhận bonus/penalty.
+The sheet calculates ability modifiers, proficiency bonus for levels 1–20, saving throw and skill bonuses, Initiative, passive Perception, spell attack bonus, spell save DC, and total equipment weight. Expertise is available for skills. Additional modifiers accept bonuses and penalties.
 
-Nhập thủ công AC, HP, Hit Dice, death saves, Heroic Inspiration, rest, conditions, lợi ích class/species/background/feat, tool proficiencies (Origin notes), languages, spell slots, prepared limit và nguồn phép phụ/Pact Magic. Không có character builder hoặc multiclass automation. Trang bị/attunement không tự tăng AC hay chỉ số. Trọng lượng không tính tiền hoặc hiệu ứng đặc biệt.
+AC, HP, Hit Dice, death saves, Heroic Inspiration, rests, conditions, class/species/background/feat benefits, tool proficiencies, languages, spell slots, prepared-spell limits, and additional spell sources are recorded manually. Equipment and attunement do not change AC or ability scores automatically.
 
-Đổi lựa chọn chỉ thay mục tham chiếu, hiển thị nhắc rà soát. Không tự cấp hoặc gỡ benefits, không giữ lợi ích ẩn. Người chơi chịu trách nhiệm sửa những giá trị thủ công từng áp dụng. Origin Feat chính ở phần thông tin; các feat bổ sung (ví dụ Human) ở Đặc tính.
+Class choices are limited to Cleric, Fighter, Rogue, and Wizard. Each has one matching subclass in the library: Life Domain, Champion, Thief, and Evoker. Subclasses become available at level 3 and are filtered by the selected class.
 
-Heroic Inspiration 2024: tiêu hao để roll lại một die bất kỳ ngay sau khi roll, phải dùng kết quả mới; tối đa một. Human nhận sau Long Rest. Công cụ chỉ đánh dấu thủ công.
+## Included rules library
 
-## Phạm vi thư viện
+This project contains an abridged subset of **SRD 5.2.1**, checked against the official source at https://www.dndbeyond.com/srd:
 
-Tập con **SRD 5.2.1**, đối chiếu bản chính thức tại https://www.dndbeyond.com/srd:
-
-- 12 class + 12 subclass: tên và liên kết trang nguồn; không nhập toàn bộ feature tables.
+- Classes: Cleric, Fighter, Rogue, Wizard.
+- Subclasses: Life Domain, Champion, Thief, Evoker.
 - Species: Human.
 - Backgrounds: Acolyte, Criminal, Sage, Soldier.
-- Origin Feats: Alert, Magic Initiate, Savage Attacker, Skilled; General Feat: Ability Score Improvement.
-- Feature: Potent Cantrip; trait: Resourceful.
-- Vật phẩm: Dagger, Club (có Mastery 2024).
-- Phép: Fire Bolt, Cure Wounds (Abjuration, hồi 2d8 ở cấp 1 theo 2024).
+- Feats: Alert, Magic Initiate, Savage Attacker, Skilled, Ability Score Improvement.
+- Features and traits: Potent Cantrip, Resourceful.
+- Equipment: Dagger and Club, including their 2024 Mastery properties.
+- Spells: Fire Bolt and Cure Wounds.
 
-Không phải thư viện đầy đủ. Bản tiếng Việt được tóm tắt; mở nguồn tiếng Anh để đọc luật đầy đủ. Mọi nhóm đều hỗ trợ custom.
+The library is intentionally limited. Most collections support custom entries. Class and subclass choices remain restricted to the four supported options so subclass filtering stays reliable.
 
-## Chạy local và sửa code
+## Run locally
 
-Cần Node.js hiện đại (20+). Không cần cài dependencies:
+Use a modern Node.js release. No packages need to be installed.
 
 ```sh
 npm start
-# Mở http://127.0.0.1:4173/DnD2024/
+# Open http://127.0.0.1:4173/DnD2024/
 npm test
 ```
 
-- `index.html`: khung trang và dialogs.
-- `styles.css`: màu, typography, desktop/mobile.
-- `app.js`: UI, popup, tham chiếu, lưu/nhập/xuất.
-- `model.js`: schema version 1, validation, công thức.
-- `rules.js`: thư viện dữ liệu, nguồn và attribution, không có UI.
-- `tests/model.test.mjs`: kiểm thử công thức và JSON.
+- `index.html`: page structure and dialogs.
+- `styles.css`: layout, typography, and responsive styles.
+- `app.js`: interface, pickers, references, and browser storage.
+- `model.js`: schema validation and calculations.
+- `rules.js`: rules-library data and attribution.
+- `tests/model.test.mjs`: model and validation tests.
 
-Không mở HTML qua `file://` vì JavaScript modules cần HTTP. Asset dùng đường dẫn tương đối để chạy dưới `/DnD2024/`.
+JavaScript modules require HTTP, so do not open the page with a `file://` URL. Relative asset paths allow the site to run under `/DnD2024/` on GitHub Pages.
 
-## GitHub Pages
+## Deployment
 
-Repository dùng Pages “Deploy from a branch”, nhánh `main`, thư mục `/ (root)`. Mỗi push lên main tự chạy Pages build/deployment. `.nojekyll` giữ nguyên các static assets. Không có secrets trong source và không cần build front-end.
+GitHub Pages deploys from the root of the `main` branch. Each push to `main` triggers a Pages build. `.nojekyll` keeps the static assets unchanged.
 
-## Dữ liệu và an toàn
+## Data and security
 
-`localStorage` key `dnd2024.character.v1`; editor draft có key riêng. JSON cần schema version 1 và các trường đầy đủ. Nhập lỗi không thay trạng thái hiện tại; bản lưu bị lỗi được giữ nguyên cho tới khi người dùng chủ động tạo mới/nhập bản hợp lệ. File giới hạn 5 MB. Schema whitelist loại trường lạ; nội dung người dùng dùng text nodes, không thực thi HTML. Nguồn custom hiển thị như văn bản.
+The character is stored under the `localStorage` key `dnd2024.character.v1`; editor drafts use a separate key. Stored data is validated against schema version 1. User-entered content is rendered as text and cannot execute HTML.
 
 ## Attribution
 
 This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
-Descriptions in Vietnamese are abridged adaptations. This is an independent character-sheet tool.
+Rules descriptions are abridged adaptations. This is an independent character-sheet tool.
