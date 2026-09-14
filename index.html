@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Character Sheet D&D 2024 bằng tiếng Việt. Lưu trên thiết bị, nhập liệu nhanh, sao lưu JSON."
+    />
+    <title>Character Sheet · D&D 2024</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#sheet">Đến bảng nhân vật</a>
+    <header>
+      <a class="brand" href="./"
+        ><span class="sigil">20</span
+        ><span>CHARACTER SHEET<small>D&D 2024 · 5.5e</small></span></a
+      >
+      <div class="toolbar">
+        <span id="save-status" role="status">Lưu trên thiết bị</span
+        ><button id="export">↓ Xuất JSON</button
+        ><button id="import">↑ Nhập JSON</button
+        ><button id="new" class="subtle">Nhân vật mới</button>
+      </div>
+    </header>
+    <main id="sheet">
+      <section class="identity" aria-label="Thông tin nhân vật">
+        <div class="name-block">
+          <span class="eyebrow">NHÂN VẬT CỦA BẠN</span
+          ><label class="sr-only" for="character-name">Tên nhân vật</label
+          ><input
+            id="character-name"
+            data-path="name"
+            placeholder="Nhân vật chưa đặt tên"
+            maxlength="200"
+          /><label
+            >Tên người chơi<input
+              data-path="player"
+              placeholder="Nhập tên người chơi"
+              maxlength="200"
+          /></label>
+        </div>
+        <div class="identity-grid" id="identity-fields"></div>
+      </section>
+      <div class="notice" id="review-notice" hidden></div>
+      <div class="workspace">
+        <section class="sheet-panel" aria-label="Nhân vật">
+          <div class="panel-caption">
+            <span>01 / NHÂN VẬT</span><span id="level-caption"></span>
+          </div>
+          <nav
+            class="tabs"
+            id="left-tabs"
+            role="tablist"
+            aria-label="Tab nhân vật"
+          ></nav>
+          <div id="left-content" role="tabpanel"></div>
+        </section>
+        <section class="sheet-panel" aria-label="Hành trang">
+          <div class="panel-caption">
+            <span>02 / HÀNH TRANG</span><span>Ghi lại hành trình</span>
+          </div>
+          <nav
+            class="tabs"
+            id="right-tabs"
+            role="tablist"
+            aria-label="Tab hành trang"
+          ></nav>
+          <div id="right-content" role="tabpanel"></div>
+        </section>
+      </div>
+      <aside id="reference" class="reference" aria-label="Tham chiếu" hidden>
+        <div class="section-head">
+          <span class="eyebrow">THAM CHIẾU</span
+          ><button id="close-reference" aria-label="Đóng tham chiếu">×</button>
+        </div>
+        <div id="reference-content"></div>
+      </aside>
+      <footer>
+        <span
+          >Dữ liệu lưu trong trình duyệt này, không tự đồng bộ. Xuất JSON để sao
+          lưu.</span
+        ><button id="about" class="text-button">Luật & hướng dẫn ↗</button>
+      </footer>
+    </main>
+    <dialog id="picker" aria-labelledby="picker-title">
+      <div class="dialog-head">
+        <div>
+          <span class="eyebrow">THƯ VIỆN 2024</span>
+          <h2 id="picker-title">Chọn mục</h2>
+        </div>
+        <button id="close-picker" aria-label="Đóng popup">×</button>
+      </div>
+      <p class="muted">
+        Tập con SRD 5.2.1 · Xem trước rồi thêm, hoặc tự tạo mục của bạn.
+      </p>
+      <div class="picker-mode">
+        <button id="library-mode" aria-pressed="true">Thư viện</button
+        ><button id="custom-mode" aria-pressed="false">
+          ＋ Tự tạo / chỉnh sửa
+        </button>
+      </div>
+      <div id="library-view">
+        <label
+          >Tìm theo tên<input
+            id="search"
+            type="search"
+            placeholder="Tìm trong thư viện…"
+        /></label>
+        <div class="picker-columns">
+          <div id="results"></div>
+          <section id="preview" aria-label="Xem trước">
+            <p class="muted">Chọn một mục để đọc thông tin.</p>
+          </section>
+        </div>
+      </div>
+      <form id="custom-form" hidden>
+        <div id="custom-fields"></div>
+        <div class="dialog-actions">
+          <button type="submit" class="primary">Lưu mục</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Xác nhận thay đổi</h2>
+      <p id="confirm-message"></p>
+      <div class="dialog-actions">
+        <button id="cancel-confirm">Hủy, giữ nguyên</button
+        ><button id="accept-confirm" class="primary">Xác nhận</button>
+      </div>
+    </dialog>
+    <dialog id="backup-dialog" aria-labelledby="backup-title">
+      <div class="dialog-head">
+        <h2 id="backup-title">Nhập bản sao lưu</h2>
+        <button id="close-backup" aria-label="Đóng nhập JSON">×</button>
+      </div>
+      <p>
+        Chọn file JSON hoặc dán nội dung. Nhân vật hiện tại chỉ bị thay thế sau
+        khi file hợp lệ và bạn xác nhận.
+      </p>
+      <label
+        >File JSON<input
+          id="import-file"
+          type="file"
+          accept=".json,application/json" /></label
+      ><label
+        >Nội dung JSON<textarea
+          id="import-text"
+          rows="8"
+          placeholder="Dán JSON vào đây"
+        ></textarea>
+      </label>
+      <p id="import-error" class="error" role="alert"></p>
+      <button id="validate-import" class="primary">Kiểm tra & nhập</button>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
