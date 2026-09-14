@@ -30,12 +30,12 @@ const names = {
   species: "Species",
   background: "Background",
   originFeat: "Origin Feat",
-  items: "Vật phẩm",
-  spells: "Phép thuật",
+  items: "Items",
+  spells: "Spells",
   features: "Features",
   traits: "Traits",
   feats: "Feats",
-  notes: "Ghi chú phiên / nhiệm vụ",
+  notes: "Session / quest notes",
 };
 const singles = ["class", "subclass", "species", "background", "originFeat"];
 function el(tag, attrs = {}, ...children) {
@@ -111,16 +111,11 @@ function notify(text) {
   toastTimer = setTimeout(() => ($("#toast").hidden = true), 5000);
 }
 function save() {
-  if (storageBlocked) {
-    $("#save-status").textContent = "Chưa lưu · xuất JSON để sao lưu";
-    return;
-  }
+  if (storageBlocked) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(character));
-    $("#save-status").textContent = "● Đã lưu trên thiết bị";
   } catch {
-    $("#save-status").textContent = "Không thể lưu";
-    notify("Trình duyệt không lưu được. Hãy xuất JSON để giữ dữ liệu.");
+    notify("Your browser could not save this character.");
   }
 }
 function confirmAction(message) {
@@ -149,7 +144,7 @@ try {
   storageBlocked = true;
   queueMicrotask(() =>
     notify(
-      "Bản lưu không đọc được. Dữ liệu cũ được giữ nguyên; nhập bản sao lưu hoặc tạo nhân vật mới.",
+      "The saved character could not be read. Existing data was kept; create a new character to continue.",
     ),
   );
 }
@@ -166,10 +161,10 @@ function calculatedDescription(label, fallback) {
     a = c.spellcasting.ability,
     m = modifier(c.abilities[a]);
   const descriptions = {
-    "SPELL ATTACK": `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + bổ sung ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
-    "SPELL SAVE DC": `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + bổ sung ${c.spellcasting.dcExtra} = ${8 + m + pb + c.spellcasting.dcExtra}`,
-    INITIATIVE: `DEX ${signed(modifier(c.abilities.dex))} + bổ sung ${c.combat.initiativeExtra} = ${signed(modifier(c.abilities.dex) + c.combat.initiativeExtra)}. Alert chưa tự cộng PB.`,
-    "PASSIVE PERCEPTION": `10 + WIS ${signed(modifier(c.abilities.wis))} + ${c.skills.Perception.rank} × PB ${pb} + bổ sung ${c.skills.Perception.extra} = ${10 + bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra)}.`,
+    "SPELL ATTACK": `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
+    "SPELL SAVE DC": `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.dcExtra} = ${8 + m + pb + c.spellcasting.dcExtra}`,
+    INITIATIVE: `DEX ${signed(modifier(c.abilities.dex))} + adjustment ${c.combat.initiativeExtra} = ${signed(modifier(c.abilities.dex) + c.combat.initiativeExtra)}. Alert does not add PB automatically.`,
+    "PASSIVE PERCEPTION": `10 + WIS ${signed(modifier(c.abilities.wis))} + ${c.skills.Perception.rank} × PB ${pb} + adjustment ${c.skills.Perception.extra} = ${10 + bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra)}.`,
   };
   return descriptions[label] || fallback;
 }
@@ -218,14 +213,14 @@ function renderReference() {
         { class: "muted" },
         [names[ref.kind], e.category].filter(Boolean).join(" · "),
       ),
-      el("p", {}, e.description || "Chưa có mô tả."),
+      el("p", {}, e.description || "No description yet."),
     );
     if (ref.kind === "spells")
       content.append(
         el(
           "p",
           {},
-          `Cấp ${e.level} · ${e.casting}\nTầm: ${e.range}\nThành phần: ${e.components}\nThời lượng: ${e.duration}`,
+          `Level ${e.level} · ${e.casting}\nRange: ${e.range}\nComponents: ${e.components}\nDuration: ${e.duration}`,
         ),
       );
     if (ref.kind === "items")
@@ -233,24 +228,24 @@ function renderReference() {
         el(
           "p",
           {},
-          `${e.quantity} × ${e.weight} lb · ${e.equipped ? "Equipped" : "Chưa equipped"} · ${e.attuned ? "Attuned" : "Chưa attuned"}`,
+          `${e.quantity} × ${e.weight} lb · ${e.equipped ? "Equipped" : "Not equipped"} · ${e.attuned ? "Attuned" : "Not attuned"}`,
         ),
       );
-    content.append(el("p", { class: "muted" }, e.source || "Nguồn chưa ghi"));
+    content.append(el("p", { class: "muted" }, e.source || "No source listed"));
     sourceLink(content, e);
     content.append(
       el(
         "p",
         {},
-        button("Chỉnh sửa mục", () => openPicker(ref.kind, e), "primary"),
-        button("Xóa mục", () => removeEntry(ref.kind, e.id), "danger"),
+        button("Edit entry", () => openPicker(ref.kind, e), "primary"),
+        button("Delete entry", () => removeEntry(ref.kind, e.id), "danger"),
       ),
     );
   } else {
     content.append(el("h2", {}, ref.title), el("p", {}, ref.description));
     if (ref.path)
       content.append(
-        button("Đến ô chỉnh sửa", () => {
+        button("Go to field", () => {
           const p = ref.path;
           ref = null;
           renderReference();
@@ -276,7 +271,7 @@ function sourceLink(target, e) {
           target: "_blank",
           rel: "noopener noreferrer",
         },
-        "Đọc nguồn SRD ↗",
+        "Read SRD source ↗",
       ),
     );
   }
@@ -287,6 +282,7 @@ $("#close-reference").onclick = () => {
 };
 function choice(kind) {
   const entry = character[kind];
+  const subclassLocked = kind === "subclass" && character.level < 3;
   return el(
     "div",
     { class: "choice" },
@@ -294,8 +290,9 @@ function choice(kind) {
     el(
       "div",
       { class: "choice-line" },
-      button(entry?.name || "＋ Chọn", () => openPicker(kind), "", {
-        "aria-label": "Chọn " + names[kind],
+      button(entry?.name || (subclassLocked ? "Available at level 3" : "＋ Choose"), () => openPicker(kind), "", {
+        "aria-label": "Choose " + names[kind],
+        disabled: subclassLocked,
       }),
       entry
         ? button("ⓘ", () => showEntry(kind, entry.id), "text-button", {
@@ -321,9 +318,9 @@ function renderIdentity() {
   n.hidden = !character.reviewNeeded;
   n.replaceChildren(
     document.createTextNode(
-      "Cần rà soát sau thay đổi origin/class. " + manualNotice,
+      "Review required after changing origin or class. " + manualNotice,
     ),
-    button("Đã rà soát", () => {
+    button("Review complete", () => {
       character.reviewNeeded = false;
       save();
       render();
@@ -331,17 +328,18 @@ function renderIdentity() {
   );
 }
 const leftTabs = [
-    ["overview", "Tổng quan"],
+    ["overview", "Overview"],
     ["combat", "Combat"],
     ["skills", "Skills"],
-    ["features", "Đặc tính"],
+    ["features", "Features"],
+    ["feats", "Feats"],
     ["origin", "Origin"],
-    ["story", "Tiểu sử"],
+    ["story", "Biography"],
   ],
   rightTabs = [
     ["items", "Inventory"],
     ["spells", "Spellcasting"],
-    ["notes", "Nhật ký"],
+    ["notes", "Journal"],
   ];
 function renderTabs(side, tabs, active) {
   const nav = $("#" + side + "-tabs");
@@ -394,7 +392,7 @@ function overview() {
   const c = character,
     pb = proficiency(c.level) + c.pbExtra;
   return [
-    head("Chỉ số năng lực", el("span", { class: "badge" }, "ĐIỂM CUỐI")),
+    head("Ability scores", el("span", { class: "badge" }, "FINAL SCORES")),
     el(
       "div",
       { class: "abilities" },
@@ -405,7 +403,7 @@ function overview() {
           button(ABILITY_NAMES[a].toUpperCase(), () =>
             showInfo(
               ABILITY_NAMES[a],
-              `Modifier = floor((${c.abilities[a]} − 10) / 2) = ${signed(modifier(c.abilities[a]))}. Điểm nhập là điểm cuối, đã gồm background/feat.`,
+              `Modifier = floor((${c.abilities[a]} − 10) / 2) = ${signed(modifier(c.abilities[a]))}. Enter final scores, including background and feat changes.`,
               "abilities." + a,
             ),
           ),
@@ -422,13 +420,13 @@ function overview() {
         () =>
           showInfo(
             "Proficiency Bonus",
-            `Level ${c.level}: ${proficiency(c.level)} + bổ sung ${c.pbExtra} = ${proficiency(c.level) + c.pbExtra}. Level 1–4: +2; 5–8: +3; 9–12: +4; 13–16: +5; 17–20: +6.`,
+            `Level ${c.level}: ${proficiency(c.level)} + adjustment ${c.pbExtra} = ${proficiency(c.level) + c.pbExtra}. Levels 1–4: +2; 5–8: +3; 9–12: +4; 13–16: +5; 17–20: +6.`,
           ),
         "text-button",
       ),
       el("strong", {}, signed(pb)),
     ),
-    field("Điều chỉnh Proficiency Bonus", "pbExtra", "number", {
+    field("Proficiency Bonus adjustment", "pbExtra", "number", {
       min: -20,
       max: 20,
     }),
@@ -438,52 +436,52 @@ function overview() {
       statCard(
         "ARMOR CLASS",
         c.combat.ac,
-        "AC nhập thủ công, đã gồm giáp, shield và hiệu ứng.",
+        "Enter AC manually, including armor, shield, and effects.",
         "combat.ac",
       ),
       statCard(
         "INITIATIVE",
         signed(modifier(c.abilities.dex) + c.combat.initiativeExtra),
-        `DEX ${signed(modifier(c.abilities.dex))} + bổ sung ${c.combat.initiativeExtra}. Alert chưa tự cộng PB.`,
+        `DEX ${signed(modifier(c.abilities.dex))} + adjustment ${c.combat.initiativeExtra}. Alert does not add PB automatically.`,
         "combat.initiativeExtra",
       ),
       statCard(
         "PASSIVE PERCEPTION",
         10 +
           bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra),
-        "10 + WIS modifier + proficiency/expertise + bổ sung Perception. Advantage/Disadvantage tình huống do GM xét.",
+        "10 + WIS modifier + proficiency/expertise + Perception adjustment. The GM determines situational Advantage or Disadvantage.",
         "skills.Perception.extra",
       ),
     ),
     hint(
-      "Nhập điểm cuối đã gồm background/feat. Thư viện chỉ lưu tham chiếu, không cộng bonus vào điểm số.",
+      "Enter final scores, including background and feat changes. The library stores references only and does not add bonuses to scores.",
     ),
   ];
 }
 function combat() {
   return [
-    head("Sẵn sàng vào trận"),
+    head("Ready for combat"),
     el(
       "div",
       { class: "grid three" },
       field("Armor Class (AC)", "combat.ac", "number", { min: 0, max: 99 }),
       field("Speed (ft)", "combat.speed", "number", { min: 0 }),
-      field("Initiative bổ sung", "combat.initiativeExtra", "number"),
-      field("HP hiện tại", "combat.hp", "number", {
+      field("Initiative adjustment", "combat.initiativeExtra", "number"),
+      field("Current HP", "combat.hp", "number", {
         min: 0,
         max: character.combat.maxHp,
       }),
-      field("HP tối đa", "combat.maxHp", "number", { min: 0 }),
+      field("Maximum HP", "combat.maxHp", "number", { min: 0 }),
       field("Temporary HP", "combat.tempHp", "number", { min: 0 }),
     ),
     el(
       "div",
       { class: "inspiration" },
       field("Heroic Inspiration", "combat.inspiration", "checkbox"),
-      button("Cách dùng ↗", () =>
+      button("How it works ↗", () =>
         showInfo(
           "Heroic Inspiration",
-          "Tiêu hao để roll lại bất kỳ một die ngay sau khi roll; bắt buộc dùng kết quả mới. Chỉ giữ tối đa một. Nếu nhận thêm khi đã có, có thể trao cho nhân vật đồng đội chưa có. Human nhận khi kết thúc Long Rest (đánh dấu thủ công).\nSRD 5.2.1 · tr. 8",
+          "Spend it to reroll any die immediately after rolling it; you must use the new result. You can hold only one. If you gain another while already holding one, you can give it to a party character who lacks it. Humans gain it after a Long Rest; mark this manually.\nSRD 5.2.1 · p. 8",
           "combat.inspiration",
         ),
       ),
@@ -492,19 +490,19 @@ function combat() {
       "div",
       { class: "grid" },
       field("Hit Dice (vd. 3d10)", "combat.hitDice"),
-      field("Số Hit Dice còn lại", "combat.hitDiceLeft", "number", { min: 0 }),
+      field("Hit Dice remaining", "combat.hitDiceLeft", "number", { min: 0 }),
     ),
     el("h3", {}, "Death saves"),
     el(
       "div",
       { class: "grid" },
-      select("Thành công", "combat.successes", [
+      select("Successes", "combat.successes", [
         [0, "○ ○ ○"],
         [1, "● ○ ○"],
         [2, "● ● ○"],
         [3, "● ● ●"],
       ]),
-      select("Thất bại", "combat.failures", [
+      select("Failures", "combat.failures", [
         [0, "○ ○ ○"],
         [1, "● ○ ○"],
         [2, "● ● ○"],
@@ -514,11 +512,11 @@ function combat() {
     el(
       "p",
       { class: "muted" },
-      "Theo dõi thủ công. Ba thành công: ổn định; ba thất bại: tử vong. Reset khi hồi HP hoặc trở nên ổn định.",
+      "Track manually. Three successes stabilize you; three failures kill you. Reset when you regain HP or become stable.",
     ),
-    field("Conditions & hiệu ứng đang có", "combat.conditions", "textarea"),
+    field("Current conditions & effects", "combat.conditions", "textarea"),
     hint(
-      "AC, HP, Hit Dice, rest và lợi ích class/species được nhập thủ công. Temporary HP là một giá trị hiện tại, không tự cộng chồng.",
+      "Enter AC, HP, Hit Dice, rests, and class or species benefits manually. Temporary HP is one current value and does not stack automatically.",
     ),
   ];
 }
@@ -526,21 +524,21 @@ function skills() {
   const row = (name, ability, path, max) => {
     const v = get(path),
       total = bonus(character, ability, v.rank, v.extra);
-    const choiceSelect = select("Mức thành thạo", path + ".rank", [
-      [0, "Chưa proficient"],
+    const choiceSelect = select("Proficiency level", path + ".rank", [
+      [0, "Not proficient"],
       [1, "Proficiency"],
       ...(max === 2 ? [[2, "Expertise"]] : []),
     ]).lastChild;
     choiceSelect.setAttribute("aria-label", name + " proficiency");
-    const extra = field("Bổ sung", path + ".extra", "number").lastChild;
-    extra.setAttribute("aria-label", name + " bổ sung");
+    const extra = field("Adjustment", path + ".extra", "number").lastChild;
+    extra.setAttribute("aria-label", name + " adjustment");
     return el(
       "div",
       { class: "skill-row" },
       button("", () =>
         showInfo(
           name,
-          `${SKILLS.find((s) => s[0] === name)?.[2] || "Saving throw " + ABILITY_NAMES[ability] + "."}\n${ABILITY_NAMES[ability]} ${signed(modifier(character.abilities[ability]))} + ${v.rank} × PB ${proficiency(character.level) + character.pbExtra} + bổ sung ${v.extra} = ${signed(bonus(character, ability, v.rank, v.extra))}.\nSRD 5.2.1 · tr. 7–9`,
+          `${SKILLS.find((s) => s[0] === name)?.[2] || "Saving throw: " + ABILITY_NAMES[ability] + "."}\n${ABILITY_NAMES[ability]} ${signed(modifier(character.abilities[ability]))} + ${v.rank} × PB ${proficiency(character.level) + character.pbExtra} + adjustment ${v.extra} = ${signed(bonus(character, ability, v.rank, v.extra))}.\nSRD 5.2.1 · pp. 7–9`,
           path + ".extra",
         ),
       ).appendChild(document.createTextNode(name)).parentElement,
@@ -550,11 +548,11 @@ function skills() {
     );
   };
   return [
-    head("Thành thạo & kỹ năng"),
+    head("Proficiencies & skills"),
     el(
       "p",
       { class: "muted" },
-      "Mỗi dòng: mức thành thạo · bổ sung · tổng. Expertise = 2 × PB; saving throws chỉ có proficiency.",
+      "Each row: proficiency level · adjustment · total. Expertise = 2 × PB; saving throws can only be proficient.",
     ),
     el("h3", {}, "Saving throws"),
     ...ABILITIES.map((a) => row(ABILITY_NAMES[a], a, "saves." + a, 1)),
@@ -566,8 +564,8 @@ function listSection(kind, title = names[kind]) {
   return [
     head(
       title,
-      button("＋ Thêm", () => openPicker(kind), "", {
-        "aria-label": "Thêm " + names[kind],
+      button("＋ Add", () => openPicker(kind), "", {
+        "aria-label": "Add " + names[kind],
       }),
     ),
     character[kind].length
@@ -587,14 +585,14 @@ function listSection(kind, title = names[kind]) {
           el(
             "h3",
             {},
-            kind === "items" ? "Hành trang còn trống" : "Chưa có mục nào",
+            kind === "items" ? "Your inventory is empty" : "No entries yet",
           ),
           el(
             "p",
             {},
-            "Chọn từ thư viện hoặc tự tạo nội dung phù hợp với nhân vật.",
+            "Choose from the library or create an entry for this character.",
           ),
-          button("＋ Thêm " + names[kind], () => openPicker(kind), "primary"),
+          button("＋ Add " + names[kind], () => openPicker(kind), "primary"),
         ),
   ];
 }
@@ -603,9 +601,9 @@ function itemCard(kind, e) {
     path = kind + "." + at;
   let meta = e.category || e.source;
   if (kind === "items")
-    meta = `${e.weight} lb / món · ${(e.quantity * e.weight).toLocaleString("vi-VN")} lb tổng`;
+    meta = `${e.weight} lb each · ${(e.quantity * e.weight).toLocaleString("en-US")} lb total`;
   if (kind === "spells")
-    meta = `${e.level === 0 ? "Cantrip" : "Cấp " + e.level} · ${e.category} · ${e.casting} · ${e.range}`;
+    meta = `${e.level === 0 ? "Cantrip" : "Level " + e.level} · ${e.category} · ${e.casting} · ${e.range}`;
   const box = el(
     "article",
     { class: "item" },
@@ -616,11 +614,11 @@ function itemCard(kind, e) {
       el(
         "div",
         {},
-        button("Sửa", () => openPicker(kind, e), "icon-button", {
-          "aria-label": "Sửa " + e.name,
+        button("Edit", () => openPicker(kind, e), "icon-button", {
+          "aria-label": "Edit " + e.name,
         }),
         button("×", () => removeEntry(kind, e.id), "icon-button danger", {
-          "aria-label": "Xóa " + e.name,
+          "aria-label": "Delete " + e.name,
         }),
       ),
     ),
@@ -636,14 +634,14 @@ function itemCard(kind, e) {
   if (kind === "spells" && e.level > 0)
     controls.append(field("Prepared", path + ".prepared", "checkbox"));
   if (kind === "notes")
-    controls.append(field("Hoàn thành", path + ".done", "checkbox"));
+    controls.append(field("Complete", path + ".done", "checkbox"));
   box.append(controls);
   return box;
 }
 async function removeEntry(kind, id) {
   if (
     !(await confirmAction(
-      "Xóa mục này khỏi nhân vật? Bạn nên xuất JSON nếu muốn giữ bản sao.",
+      "Delete this entry from the character? Export JSON first if you want to keep a copy.",
     ))
   )
     return;
@@ -654,7 +652,7 @@ async function removeEntry(kind, id) {
   save();
   render();
   renderReference();
-  notify("Đã xóa mục.");
+  notify("Entry deleted.");
 }
 function inventory() {
   const attuned = character.items.filter((e) => e.attuned).length;
@@ -666,31 +664,31 @@ function inventory() {
         field(k.toUpperCase(), "coins." + k, "number", { min: 0 }),
       ),
     ),
-    ...listSection("items", "Trang bị & vật phẩm"),
+    ...listSection("items", "Equipment & items"),
     el(
       "div",
       { class: "stats" },
       statCard(
-        "TRỌNG LƯỢNG",
+        "WEIGHT",
         totalWeight(character).toLocaleString("vi-VN") + " lb",
-        "Tổng số lượng × trọng lượng mỗi vật phẩm. Chưa tính tiền, sức chứa, hoặc hiệu ứng thay đổi trọng lượng.",
+        "Total quantity × weight per item. Coins, carrying capacity, and weight-changing effects are not included.",
       ),
       statCard(
         "ATTUNEMENT",
         attuned + " / 3",
-        "Thông thường tối đa 3 magic items attuned. Đánh dấu thủ công; ngoại lệ do feature cần tự đối chiếu.",
+        "Usually, no more than three magic items can be attuned. Track manually and check any feature exceptions.",
       ),
       statCard(
-        "SỐ MỤC",
+        "ITEMS",
         character.items.length,
-        "Số dòng vật phẩm trong hành trang.",
+        "The number of entries in your inventory.",
       ),
     ),
     attuned > 3
       ? el(
           "p",
           { class: "error" },
-          "Đã vượt 3 mục attuned. Hãy kiểm tra ngoại lệ của nhân vật.",
+          "More than three items are attuned. Check whether your character has an exception.",
         )
       : null,
   ];
@@ -702,8 +700,8 @@ function spells() {
     m = modifier(c.abilities[a]);
   return [
     head(
-      "Phép thuật",
-      button("＋ Thêm phép", () => openPicker("spells")),
+      "Spellcasting",
+      button("＋ Add spell", () => openPicker("spells")),
     ),
     el(
       "div",
@@ -714,7 +712,7 @@ function spells() {
         ABILITIES.map((a) => [a, ABILITY_NAMES[a]]),
       ),
       field(
-        "Số prepared tối đa (tự nhập)",
+        "Prepared spell limit (manual)",
         "spellcasting.preparedLimit",
         "number",
         { min: 0 },
@@ -726,13 +724,13 @@ function spells() {
       statCard(
         "SPELL ATTACK",
         signed(m + pb + c.spellcasting.attackExtra),
-        `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + bổ sung ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
+        `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
         "spellcasting.attackExtra",
       ),
       statCard(
         "SPELL SAVE DC",
         8 + m + pb + c.spellcasting.dcExtra,
-        `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + bổ sung ${c.spellcasting.dcExtra}`,
+        `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.dcExtra}`,
         "spellcasting.dcExtra",
       ),
       statCard(
@@ -740,15 +738,15 @@ function spells() {
         c.spells.filter((s) => s.level > 0 && s.prepared).length +
           "/" +
           c.spellcasting.preparedLimit,
-        "Chỉ đếm spell cấp 1+ được đánh dấu Prepared. Giới hạn và các phép luôn prepared do người chơi theo dõi.",
+        "Counts only prepared spells of level 1+. Track your limit and always-prepared spells manually.",
         "spellcasting.preparedLimit",
       ),
     ),
     el(
       "div",
       { class: "grid" },
-      field("Spell attack bổ sung", "spellcasting.attackExtra", "number"),
-      field("Spell DC bổ sung", "spellcasting.dcExtra", "number"),
+      field("Spell attack adjustment", "spellcasting.attackExtra", "number"),
+      field("Spell save DC adjustment", "spellcasting.dcExtra", "number"),
     ),
     el("h3", {}, "Spell slots"),
     el(
@@ -758,21 +756,21 @@ function spells() {
         el(
           "div",
           { class: "slot" },
-          el("span", {}, "Cấp " + (i + 1)),
+          el("span", {}, "Level " + (i + 1)),
           el(
             "div",
             { class: "slot-fields" },
-            field("Tối đa", "slots." + i + ".max", "number", {
+            field("Maximum", "slots." + i + ".max", "number", {
               min: 0,
               max: 99,
             }),
-            field("Đã dùng", "slots." + i + ".used", "number", {
+            field("Used", "slots." + i + ".used", "number", {
               min: 0,
               max: s.max,
             }),
           ),
           button(
-            "Dùng 1 slot",
+            "Use 1 slot",
             () => {
               s.used++;
               save();
@@ -781,7 +779,7 @@ function spells() {
             "",
             {
               disabled: s.used >= s.max,
-              "aria-label": "Dùng slot cấp " + (i + 1),
+              "aria-label": "Use level " + (i + 1) + " slot",
             },
           ),
         ),
@@ -790,12 +788,12 @@ function spells() {
     el(
       "p",
       { class: "muted" },
-      "Nhập slot theo class/level; giảm “Đã dùng” khi được hồi. Pact Magic và nguồn phép khác ghi riêng bên dưới.",
+      "Enter slots by class and level; reduce Used when slots are restored. Record Pact Magic and other spell sources separately below.",
     ),
     ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
       .filter((l) => c.spells.some((s) => s.level === l))
       .flatMap((l) => [
-        el("h3", {}, l === 0 ? "Cantrips" : "Spell cấp " + l),
+        el("h3", {}, l === 0 ? "Cantrips" : "Level " + l + " spells"),
         el(
           "div",
           { class: "list" },
@@ -808,41 +806,48 @@ function spells() {
       ? el(
           "p",
           { class: "hint" },
-          "Chưa có phép. Dùng “Thêm phép” để tìm hoặc tự tạo.",
+          "No spells yet. Use “Add spell” to search or create one.",
         )
       : null,
-    el("h3", {}, "Nguồn phép khác / Pact Magic"),
+    el("h3", {}, "Other spell sources / Pact Magic"),
     field(
-      "Ghi rõ ability, attack/DC, số lần dùng hoặc slots riêng",
+      "Record ability, attack/DC, uses, or separate slots",
       "spellcasting.notes",
       "textarea",
     ),
   ];
 }
 function features() {
-  return ["features", "traits", "feats"].flatMap((k) => [
+  return ["features", "traits"].flatMap((k) => [
     ...listSection(k),
     el("div", { style: "height:22px" }),
   ]);
 }
+function feats() {
+  return [
+    head("Feats"),
+    hint("Choose any number of feats. Add each feat separately; the sheet does not apply benefits automatically."),
+    ...listSection("feats"),
+  ];
+}
 function origin() {
   return [
-    head("Nguồn gốc nhân vật"),
+    head("Character origin"),
     el(
       "div",
       { class: "grid" },
       choice("species"),
       choice("background"),
       choice("originFeat"),
-      field("Kích thước", "size"),
+      field("Size", "size"),
     ),
     hint(
-      "Background 2024: tăng +2/+1 trong ba ability được liệt kê, hoặc +1 cả ba (tối đa 20); nhận Origin Feat, skill/tool proficiencies. Tự áp dụng vào điểm cuối và các mục tương ứng. Species không tự cộng ability score.",
+      "2024 backgrounds: increase one listed ability by 2 and another by 1, or increase all three by 1, to a maximum of 20. They grant an Origin Feat and skill/tool proficiencies. Apply these to final scores and relevant entries yourself. Species do not automatically increase ability scores.",
     ),
-    field("Ngôn ngữ", "languages"),
-    el("h3", {}, "Lựa chọn & lợi ích đã áp dụng"),
+    field("Languages", "languages"),
+    el("h3", {}, "Applied choices & benefits"),
     field(
-      "Ghi rõ bonus, nguồn, skills, tools, lựa chọn species/feat",
+      "Record bonuses, source, skills, tools, and species or feat choices",
       "originNotes",
       "textarea",
     ),
@@ -851,7 +856,7 @@ function origin() {
 }
 function story() {
   return [
-    head("Câu chuyện của bạn"),
+    head("Your story"),
     el(
       "div",
       { class: "grid" },
@@ -861,14 +866,10 @@ function story() {
     el(
       "div",
       { class: "text-stack" },
-      field("Tiểu sử", "biography", "textarea"),
-      field("Ngoại hình", "appearance", "textarea"),
-      field(
-        "Tính cách, lý tưởng, mối liên kết, khuyết điểm",
-        "personality",
-        "textarea",
-      ),
-      field("Ghi chú nhân vật", "characterNotes", "textarea"),
+      field("Biography", "biography", "textarea"),
+      field("Appearance", "appearance", "textarea"),
+      field("Personality, ideals, bonds, flaws", "personality", "textarea"),
+      field("Character notes", "characterNotes", "textarea"),
     ),
   ];
 }
@@ -877,7 +878,7 @@ function render() {
   renderTabs("left", leftTabs, leftTab);
   renderTabs("right", rightTabs, rightTab);
   $("#left-content").replaceChildren(
-    ...{ overview, combat, skills, features, origin, story }
+    ...{ overview, combat, skills, features, feats, origin, story }
       [leftTab]()
       .filter(Boolean),
   );
@@ -885,7 +886,7 @@ function render() {
     ...{
       items: inventory,
       spells,
-      notes: () => listSection("notes", "Nhật ký hành trình"),
+      notes: () => listSection("notes", "Adventure journal"),
     }
       [rightTab]()
       .filter(Boolean),
@@ -918,9 +919,9 @@ function refreshDerived() {
       c.spells.filter((s) => s.level > 0 && s.prepared).length +
       "/" +
       c.spellcasting.preparedLimit,
-    "TRỌNG LƯỢNG": totalWeight(c).toLocaleString("vi-VN") + " lb",
+    WEIGHT: totalWeight(c).toLocaleString("en-US") + " lb",
     ATTUNEMENT: c.items.filter((e) => e.attuned).length + " / 3",
-    "SỐ MỤC": c.items.length,
+    ITEMS: c.items.length,
   };
   document.querySelectorAll(".stat").forEach((n) => {
     const label = n.querySelector("span")?.textContent;
@@ -952,7 +953,7 @@ function refreshDerived() {
     document.querySelectorAll("#right-content .item").forEach((n, i) => {
       const item = c.items[i];
       n.querySelector(".item-meta").textContent =
-        `${item.weight} lb / món · ${(item.quantity * item.weight).toLocaleString("vi-VN")} lb tổng`;
+        `${item.weight} lb each · ${(item.quantity * item.weight).toLocaleString("en-US")} lb total`;
     });
 }
 function acceptInput(target) {
@@ -988,24 +989,24 @@ document.addEventListener("change", (e) => {
   acceptInput(e.target);
   if (!e.target.checkValidity()) {
     e.target.value = get(e.target.dataset.path);
-    notify("Giá trị ngoài phạm vi; đã giữ giá trị hợp lệ trước đó.");
+    notify("Value is out of range; the previous valid value was kept.");
   }
 });
 function editorFields(kind, entry) {
   const simple = [
-    ["Tên", "name", "text"],
-    ["Loại / nhóm", "category", "text"],
-    ["Mô tả / ghi chú", "description", "textarea"],
-    ["Nguồn", "source", "text"],
+    ["Name", "name", "text"],
+    ["Type / category", "category", "text"],
+    ["Description / notes", "description", "textarea"],
+    ["Source", "source", "text"],
   ];
   if (kind === "items")
     simple.push(
-      ["Số lượng", "quantity", "number", 0, 99999],
-      ["Trọng lượng mỗi món (lb)", "weight", "number", 0, 999999],
+      ["Quantity", "quantity", "number", 0, 99999],
+      ["Weight per item (lb)", "weight", "number", 0, 999999],
     );
   if (kind === "spells")
     simple.push(
-      ["Cấp (0 = cantrip)", "level", "number", 0, 9],
+      ["Level (0 = cantrip)", "level", "number", 0, 9],
       ["Casting time", "casting", "text"],
       ["Range", "range", "text"],
       ["Components", "components", "text"],
@@ -1062,6 +1063,10 @@ function setMode(custom) {
   $("#custom-mode").setAttribute("aria-pressed", String(custom));
 }
 async function openPicker(kind, entry = null) {
+  if (kind === "subclass" && !entry && character.level < 3) {
+    notify("Subclass choices become available at level 3.");
+    return;
+  }
   pickerContext = {
     kind,
     entry: entry ? { ...entry } : newEntry(),
@@ -1069,10 +1074,10 @@ async function openPicker(kind, entry = null) {
   };
   draftDirty = false;
   $("#picker-title").textContent =
-    (entry ? "Chỉnh sửa · " : "Chọn · ") + names[kind];
+    (entry ? "Edit · " : "Choose · ") + names[kind];
   $("#search").value = "";
   $("#preview").replaceChildren(
-    el("p", { class: "muted" }, "Chọn một mục để đọc thông tin."),
+    el("p", { class: "muted" }, "Choose an entry to view its details."),
   );
   pickerSelected = null;
   editorFields(kind, pickerContext.entry);
@@ -1083,7 +1088,7 @@ async function openPicker(kind, entry = null) {
   if (entry)
     $("#custom-form .dialog-actions").prepend(
       button(
-        "Xóa mục",
+        "Delete entry",
         async () => {
           await removeEntry(kind, entry.id);
           const remains = singles.includes(kind)
@@ -1112,7 +1117,9 @@ async function openPicker(kind, entry = null) {
   ) {
     if (
       await confirmAction(
-        "Có bản nháp chưa lưu của " + names[kind] + ". Khôi phục để tiếp tục?",
+        "There is an unsaved draft for " +
+          names[kind] +
+          ". Restore it to continue?",
       )
     ) {
       pickerContext.entry = { ...pickerContext.entry, ...previous.entry };
@@ -1126,6 +1133,8 @@ function renderResults() {
   const q = $("#search").value.trim().toLocaleLowerCase("vi");
   const entries = (library[pickerContext.kind] || []).filter((e) =>
     e.name.toLocaleLowerCase("vi").includes(q),
+  ).filter((e) =>
+    pickerContext.kind !== "subclass" || e.category === character.class?.name,
   );
   $("#results").replaceChildren(
     ...(entries.length
@@ -1147,7 +1156,7 @@ function renderResults() {
                   el(
                     "p",
                     {},
-                    `Cấp ${e.level} · ${e.casting} · ${e.range}\n${e.components} · ${e.duration}`,
+                    `Level ${e.level} · ${e.casting} · ${e.range}\n${e.components} · ${e.duration}`,
                   ),
                 );
               p.append(
@@ -1156,8 +1165,8 @@ function renderResults() {
                   {},
                   button(
                     pickerContext.editing
-                      ? "Thay bằng mục này"
-                      : "Thêm vào nhân vật",
+                      ? "Replace with this entry"
+                      : "Add to character",
                     () => commitEntry({ ...pickerContext.entry, ...e }),
                     "primary",
                   ),
@@ -1172,7 +1181,7 @@ function renderResults() {
           el(
             "p",
             { class: "muted" },
-            "Không có kết quả. Chuyển sang “Tự tạo / chỉnh sửa” để nhập mục mới.",
+            "No results. Switch to “Create / edit” to enter a new item.",
           ),
         ]),
   );
@@ -1187,7 +1196,7 @@ async function closePicker() {
   // Keep unfinished text locally; Escape never silently discards the draft.
   if (draftDirty) {
     saveDraft();
-    notify("Đã giữ bản nháp. Mở lại cùng loại mục để khôi phục.");
+    notify("Draft saved. Open the same entry type to restore it.");
   }
   $("#picker").close();
 }
@@ -1199,14 +1208,16 @@ $("#picker").oncancel = (e) => {
 async function commitEntry(entry) {
   const kind = pickerContext.kind;
   if (!entry.name.trim()) {
-    notify("Hãy nhập tên mục.");
+    notify("Enter an entry name.");
     return;
   }
   entry.name = entry.name.trim();
   if (
     singles.includes(kind) &&
     character[kind] &&
-    !(await confirmAction("Thay " + names[kind] + " hiện tại? " + manualNotice))
+    !(await confirmAction(
+      "Replace the current " + names[kind] + "? " + manualNotice,
+    ))
   )
     return;
   if (
@@ -1215,7 +1226,9 @@ async function commitEntry(entry) {
     character[kind].some(
       (e) => e.name.toLowerCase() === entry.name.toLowerCase(),
     ) &&
-    !(await confirmAction("Mục trùng tên đã tồn tại. Thêm một mục riêng nữa?"))
+    !(await confirmAction(
+      "An entry with this name already exists. Add another separate entry?",
+    ))
   )
     return;
   // Only the selected reference is replaced; no dependent statistic is modified.
@@ -1236,7 +1249,7 @@ async function commitEntry(entry) {
   $("#picker").close();
   save();
   render();
-  notify("Đã lưu " + entry.name + ".");
+  notify(entry.name + " saved.");
 }
 $("#custom-form").onsubmit = (e) => {
   e.preventDefault();
@@ -1244,77 +1257,15 @@ $("#custom-form").onsubmit = (e) => {
 };
 $("#about").onclick = () =>
   showInfo(
-    "Luật & cách sử dụng",
-    "Bắt đầu bằng tên, class, origin và điểm ability cuối. Chọn tab độc lập ở hai khung. Bấm tên/chỉ số để xem; dùng Thêm hoặc Sửa để cập nhật.\n\nTự tính: modifiers, PB theo tổng level, skill/save bonus, Initiative theo DEX + bổ sung, passive Perception, spell attack/DC, tổng trọng lượng.\n\nNhập thủ công: AC, HP, Hit Dice, rest, skills được cấp, lợi ích background/species/class/feat, spell slots, prepared limit, Pact Magic và nguồn phép phụ. Không tự tạo nhân vật/multiclass.\n\nThư viện chỉ là tập con đã đối chiếu: 12 class và 12 subclass (tham chiếu), Human, 4 backgrounds, 5 feats (4 Origin), Potent Cantrip, Resourceful, Dagger, Club, Fire Bolt, Cure Wounds. Có thể tự tạo mọi loại mục. Bản dịch là bản tóm tắt; ưu tiên nguồn SRD tiếng Anh.\n\n" +
+    "Rules & guide",
+    "Start with a name, class, origin, and final ability scores. The two panels have independent tabs. Select a name or statistic to view its reference; use Add or Edit to update entries.\n\nCalculated: modifiers, PB by total level, skill/save bonuses, Initiative from DEX plus adjustment, passive Perception, spell attack/DC, and total item weight.\n\nManual: AC, HP, Hit Dice, rests, granted skills, background/species/class/feat benefits, spell slots, prepared limit, Pact Magic, and secondary spell sources. There is no automatic character builder or multiclassing.\n\nThe library is a verified subset: 12 classes and subclasses (references), Human, four backgrounds, five feats (four Origin), Potent Cantrip, Resourceful, Dagger, Club, Fire Bolt, and Cure Wounds. Every category supports custom entries. The English SRD source takes priority.\n\n" +
       attribution +
-      "\n\nEscape đóng popup và giữ bản nháp chỉnh sửa. Xuất JSON thường xuyên; dữ liệu chỉ ở trình duyệt này.",
+      "\n\nEscape closes dialogs and keeps editing drafts. Data is stored only in this browser.",
   );
-$("#export").onclick = () => {
-  const blob = new Blob([JSON.stringify(character, null, 2)], {
-      type: "application/json",
-    }),
-    url = URL.createObjectURL(blob);
-  const a = el("a", {
-    href: url,
-    download:
-      (character.name || "nhan-vat").replace(/[^\p{L}\p{N}_-]/gu, "_") +
-      "-dnd2024.json",
-  });
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-  notify("Đã xuất bản sao JSON.");
-};
-$("#import").onclick = () => {
-  $("#import-error").textContent = "";
-  $("#backup-dialog").showModal();
-};
-$("#close-backup").onclick = () => $("#backup-dialog").close();
-$("#import-file").onchange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 5000000) {
-    $("#import-error").textContent = "File quá lớn (giới hạn 5 MB).";
-    return;
-  }
-  try {
-    $("#import-text").value = await file.text();
-    $("#import-error").textContent =
-      "Đã đọc file. Bấm Kiểm tra & nhập để tiếp tục.";
-  } catch {
-    $("#import-error").textContent = "Không đọc được file.";
-  }
-};
-$("#validate-import").onclick = async () => {
-  let next;
-  try {
-    next = parseBackup($("#import-text").value);
-  } catch (error) {
-    $("#import-error").textContent = error.message;
-    return;
-  }
-  if (
-    !(await confirmAction(
-      "File hợp lệ: " +
-        (next.name || "Nhân vật chưa đặt tên") +
-        ", level " +
-        next.level +
-        ". Thay thế nhân vật hiện tại? Hãy xuất JSON trước nếu cần giữ bản cũ.",
-    ))
-  )
-    return;
-  character = next;
-  storageBlocked = false;
-  ref = null;
-  $("#backup-dialog").close();
-  renderReference();
-  save();
-  render();
-  notify("Đã nhập nhân vật.");
-};
 $("#new").onclick = async () => {
   if (
     !(await confirmAction(
-      "Tạo nhân vật mới sẽ thay thế nhân vật đang lưu trên thiết bị. Bạn đã xuất JSON nếu muốn giữ bản cũ?",
+      "Creating a new character will replace the one saved on this device.",
     ))
   )
     return;
@@ -1324,7 +1275,7 @@ $("#new").onclick = async () => {
   renderReference();
   save();
   render();
-  notify("Đã tạo nhân vật mới.");
+  notify("New character created.");
 };
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !document.querySelector("dialog[open]") && ref) {
