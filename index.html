@@ -9,7 +9,7 @@
     />
     <title>Character Sheet · D&D 2024</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=3" />
   </head>
   <body>
     <a class="skip" href="#sheet">Skip to character sheet</a>
@@ -17,7 +17,7 @@
       <section class="identity" aria-label="Character details">
         <div class="name-block">
           <div class="character-heading"><span class="eyebrow">YOUR CHARACTER</span><button id="new" class="subtle new-character">New character</button></div>
-          ><label class="sr-only" for="character-name">Character name</label
+          <label class="sr-only" for="character-name">Character name</label
           ><input
             id="character-name"
             data-path="name"
@@ -69,7 +69,7 @@
       <footer>
         <span
           >Your data is stored in this browser and does not sync automatically.
-          Export JSON for backup.</span
+          </span
         ><button id="about" class="text-button">Rules & guide ↗</button>
       </footer>
     </main>
@@ -118,6 +118,6 @@
       </div>
     </dialog>
     <div id="toast" role="status" hidden></div>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=3"></script>
   </body>
 </html>

@@ -9,24 +9,24 @@ export const ABILITY_NAMES = {
   cha: "Charisma",
 };
 export const SKILLS = [
-  ["Acrobatics", "dex", "Giữ thăng bằng, nhào lộn."],
-  ["Animal Handling", "wis", "Tương tác và kiểm soát động vật."],
-  ["Arcana", "int", "Kiến thức về phép thuật."],
-  ["Athletics", "str", "Leo trèo, nhảy và bơi."],
-  ["Deception", "cha", "Che giấu sự thật hoặc đánh lừa."],
-  ["History", "int", "Nhớ lại sự kiện lịch sử."],
-  ["Insight", "wis", "Nhận biết ý định và tâm trạng."],
-  ["Intimidation", "cha", "Gây ảnh hưởng bằng đe dọa."],
-  ["Investigation", "int", "Suy luận từ manh mối."],
-  ["Medicine", "wis", "Kiến thức y học."],
-  ["Nature", "int", "Kiến thức về thế giới tự nhiên."],
-  ["Perception", "wis", "Nhận biết điều xung quanh."],
-  ["Performance", "cha", "Biểu diễn để làm khán giả thích thú."],
-  ["Persuasion", "cha", "Thuyết phục bằng lý lẽ hoặc thiện chí."],
-  ["Religion", "int", "Kiến thức tôn giáo."],
-  ["Sleight of Hand", "dex", "Thao tác tay tinh tế."],
-  ["Stealth", "dex", "Ẩn mình và di chuyển kín đáo."],
-  ["Survival", "wis", "Lần dấu và sinh tồn nơi hoang dã."],
+  ["Acrobatics", "dex", "Balance, tumbling, and acrobatics."],
+  ["Animal Handling", "wis", "Handle and control animals."],
+  ["Arcana", "int", "Knowledge of magic."],
+  ["Athletics", "str", "Climbing, jumping, and swimming."],
+  ["Deception", "cha", "Conceal the truth or mislead."],
+  ["History", "int", "Recall historical events."],
+  ["Insight", "wis", "Read intentions and moods."],
+  ["Intimidation", "cha", "Influence through threats."],
+  ["Investigation", "int", "Draw conclusions from clues."],
+  ["Medicine", "wis", "Medical knowledge."],
+  ["Nature", "int", "Knowledge of the natural world."],
+  ["Perception", "wis", "Notice the world around you."],
+  ["Performance", "cha", "Perform for an audience."],
+  ["Persuasion", "cha", "Persuade through reason or goodwill."],
+  ["Religion", "int", "Knowledge of religion."],
+  ["Sleight of Hand", "dex", "Fine manual manipulation."],
+  ["Stealth", "dex", "Hide and move quietly."],
+  ["Survival", "wis", "Track and survive in the wild."],
 ];
 export const modifier = (score) => Math.floor((score - 10) / 2);
 export const proficiency = (level) => 2 + Math.floor((level - 1) / 4);
@@ -112,7 +112,7 @@ export function newEntry() {
     id: crypto.randomUUID(),
     name: "",
     description: "",
-    source: "Tùy chỉnh",
+    source: "Custom",
     quantity: 1,
     weight: 0,
     equipped: false,
@@ -129,9 +129,9 @@ export function newEntry() {
 }
 function fail(path) {
   throw new Error(
-    "Dữ liệu không hợp lệ tại “" +
+    "Invalid data at “" +
       path +
-      "”. Hãy nhập file được xuất từ Character Sheet này.",
+      "”. Import a file exported by this Character Sheet.",
   );
 }
 function checkShape(value, template, path) {
@@ -159,9 +159,9 @@ function inRange(n, min, max, path) {
 }
 export function validateCharacter(input) {
   if (!input || input.version !== VERSION)
-    throw new Error("Phiên bản JSON chưa được hỗ trợ (cần version 1).");
+    throw new Error("Unsupported JSON version (version 1 is required).");
   const base = freshCharacter();
-  checkShape(input, base, "nhân vật");
+  checkShape(input, base, "character");
   inRange(input.level, 1, 20, "level");
   for (const a of ABILITIES) inRange(input.abilities[a], 1, 30, a);
   if (!ABILITIES.includes(input.spellcasting.ability))
@@ -177,7 +177,7 @@ export function validateCharacter(input) {
   for (const k of ["successes", "failures"]) inRange(input.combat[k], 0, 3, k);
   for (const k of ["ac", "speed", "hp", "maxHp", "tempHp", "hitDiceLeft"])
     if (input.combat[k] < 0) fail(k);
-  if (input.combat.hp > input.combat.maxHp) fail("HP hiện tại > tối đa");
+  if (input.combat.hp > input.combat.maxHp) fail("current HP > maximum HP");
   if (input.slots.length !== 9) fail("slots");
   input.slots.forEach((s, i) => {
     checkShape(s, { max: 0, used: 0 }, "slots");
@@ -225,13 +225,14 @@ export function validateCharacter(input) {
   return result;
 }
 export function parseBackup(text) {
-  if (text.length > 5000000) throw new Error("File quá lớn. Giới hạn 5 MB.");
+  if (text.length > 5000000)
+    throw new Error("File is too large. The limit is 5 MB.");
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
     throw new Error(
-      "JSON không đúng cú pháp. Nhân vật hiện tại được giữ nguyên.",
+      "Invalid JSON syntax. Your current character has been kept.",
     );
   }
   return validateCharacter(parsed);

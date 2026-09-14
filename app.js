@@ -10,8 +10,8 @@ import {
   newEntry,
   parseBackup,
   totalWeight,
-} from "./model.js";
-import { library, SRD, manualNotice, attribution } from "./rules.js";
+} from "./model.js?v=3";
+import { library, SRD, manualNotice, attribution } from "./rules.js?v=3";
 const $ = (s) => document.querySelector(s);
 const KEY = "dnd2024.character.v1",
   DRAFT_KEY = "dnd2024.editor-draft.v1";
@@ -140,6 +140,10 @@ function confirmAction(message) {
 try {
   const raw = localStorage.getItem(KEY);
   if (raw) character = parseBackup(raw);
+  if (character.originFeat) {
+    character.feats.push(character.originFeat);
+    character.originFeat = null;
+  }
 } catch (error) {
   storageBlocked = true;
   queueMicrotask(() =>
@@ -282,7 +286,7 @@ $("#close-reference").onclick = () => {
 };
 function choice(kind) {
   const entry = character[kind];
-  const subclassLocked = kind === "subclass" && character.level < 3;
+  const subclassLocked = kind === "subclass" && (character.level < 3 || !character.class);
   return el(
     "div",
     { class: "choice" },
@@ -296,7 +300,7 @@ function choice(kind) {
       }),
       entry
         ? button("ⓘ", () => showEntry(kind, entry.id), "text-button", {
-            "aria-label": "Xem " + names[kind],
+            "aria-label": "View " + names[kind],
           })
         : null,
     ),
@@ -309,7 +313,6 @@ function renderIdentity() {
     field("Level", "level", "number", { min: 1, max: 20 }),
     choice("species"),
     choice("background"),
-    choice("originFeat"),
   );
   $("#character-name").value = character.name;
   document.querySelector('[data-path="player"]').value = character.player;
@@ -641,12 +644,13 @@ function itemCard(kind, e) {
 async function removeEntry(kind, id) {
   if (
     !(await confirmAction(
-      "Delete this entry from the character? Export JSON first if you want to keep a copy.",
+      "Delete this entry from the character?",
     ))
   )
     return;
   if (singles.includes(kind)) {
     character[kind] = null;
+    if (kind === "class") character.subclass = null;
     character.reviewNeeded = true;
   } else character[kind] = character[kind].filter((x) => x.id !== id);
   save();
@@ -826,7 +830,15 @@ function features() {
 function feats() {
   return [
     head("Feats"),
-    hint("Choose any number of feats. Add each feat separately; the sheet does not apply benefits automatically."),
+    hint("Select multiple feats below. Benefits are applied manually."),
+    el("div", { class: "grid" }, library.feats.map((entry) => {
+      const input = el("input", { type: "checkbox", checked: character.feats.some(f => f.name === entry.name), onchange: () => {
+        if (input.checked) character.feats.push({ ...newEntry(), ...entry });
+        else character.feats = character.feats.filter(f => f.name !== entry.name);
+        save(); render();
+      }});
+      return el("label", { class: "check" }, input, entry.name);
+    })),
     ...listSection("feats"),
   ];
 }
@@ -838,7 +850,6 @@ function origin() {
       { class: "grid" },
       choice("species"),
       choice("background"),
-      choice("originFeat"),
       field("Size", "size"),
     ),
     hint(
@@ -974,6 +985,12 @@ function acceptInput(target) {
   )
     return;
   set(path, value);
+  if (path === "level") {
+    if (value < 3) character.subclass = null;
+    const control = document.querySelector('[aria-label="Choose Subclass"]');
+    control.disabled = value < 3 || !character.class;
+    control.textContent = character.subclass?.name || (value < 3 ? "Available at level 3" : "＋ Choose");
+  }
   if (path === "combat.maxHp")
     character.combat.hp = Math.min(character.combat.hp, value);
   if (/^slots\.\d\.max$/.test(path)) {
@@ -1063,7 +1080,7 @@ function setMode(custom) {
   $("#custom-mode").setAttribute("aria-pressed", String(custom));
 }
 async function openPicker(kind, entry = null) {
-  if (kind === "subclass" && !entry && character.level < 3) {
+  if (kind === "subclass" && (character.level < 3 || !character.class)) {
     notify("Subclass choices become available at level 3.");
     return;
   }
@@ -1081,7 +1098,9 @@ async function openPicker(kind, entry = null) {
   );
   pickerSelected = null;
   editorFields(kind, pickerContext.entry);
-  setMode(Boolean(entry));
+  const restricted = kind === "class" || kind === "subclass";
+  $("#custom-mode").hidden = restricted;
+  setMode(Boolean(entry) && !restricted);
   renderResults();
   const oldDelete = $("#editor-delete");
   if (oldDelete) oldDelete.remove();
@@ -1207,6 +1226,8 @@ $("#picker").oncancel = (e) => {
 };
 async function commitEntry(entry) {
   const kind = pickerContext.kind;
+  if (kind === "class" && !library.class.some(e => e.name === entry.name)) return;
+  if (kind === "subclass" && (character.level < 3 || !library.subclass.some(e => e.name === entry.name && e.category === character.class?.name))) return;
   if (!entry.name.trim()) {
     notify("Enter an entry name.");
     return;
@@ -1237,6 +1258,7 @@ async function commitEntry(entry) {
     if (entry[key] !== undefined) safe[key] = entry[key];
   if (singles.includes(kind)) {
     character[kind] = safe;
+    if (kind === "class" && character.subclass?.category !== safe.name) character.subclass = null;
     character.reviewNeeded = true;
   } else if (pickerContext.editing) {
     const i = character[kind].findIndex((e) => e.id === entry.id);
