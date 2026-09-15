@@ -7,10 +7,10 @@ Live site: https://trangduythong1994.github.io/DnD2024/
 ## Using the sheet
 
 1. Enter the character name, level, class, subclass, species, and background.
-2. Enter final ability scores after any background, feat, or other adjustments. The sheet does not apply those adjustments automatically.
+2. In Overview, choose Class, Subclass, Level, Species, and Background, then enter final ability scores.
 3. Use the left and right tab groups independently. Select names and scores to open their rules references.
 4. Select any number of feats from the Feats tab, or add custom feats.
-5. Record proficiencies, combat values, equipment, spell slots, and prepared spells.
+5. Record proficiencies, combat values, equipment, and prepared spells. Spell slots follow the selected supported class and level.
 
 Every valid change is saved to this browser. **New Character** clears the current sheet after confirmation. Clearing browser data can remove the character permanently.
 
@@ -18,9 +18,9 @@ The page stays within the browser viewport. On desktop, the Character and Gear p
 
 ## Rules behavior
 
-The sheet calculates ability modifiers, proficiency bonus for levels 1–20, saving throw and skill bonuses, Initiative, passive Perception, spell attack bonus, spell save DC, and total equipment weight. Expertise is available for skills. Additional modifiers accept bonuses and penalties.
+The sheet calculates ability modifiers, proficiency bonus for levels 1–20, saving throw and skill bonuses, Initiative, spell attack bonus, spell save DC, class-level spell slots, and total equipment weight. Expertise is available for skills.
 
-AC, HP, Hit Dice, death saves, Heroic Inspiration, rests, conditions, class/species/background/feat benefits, tool proficiencies, languages, spell slots, prepared-spell limits, and additional spell sources are recorded manually. Equipment and attunement do not change AC or ability scores automatically.
+AC, HP, Hit Dice, death saves, Heroic Inspiration, rests, conditions, class/species/background/feat benefits, tool proficiencies, languages, prepared-spell limits, used spell slots, and additional spell sources are recorded manually. Equipment and attunement do not change AC or ability scores automatically.
 
 Class choices are limited to Cleric, Fighter, Rogue, and Wizard. Each has one matching subclass in the library: Life Domain, Champion, Thief, and Evoker. Subclasses become available at level 3 and are filtered by the selected class.
 

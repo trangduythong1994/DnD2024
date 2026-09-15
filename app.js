@@ -141,13 +141,15 @@ function confirmAction(message) {
 try {
   const raw = localStorage.getItem(KEY);
   if (raw) character = parseBackup(raw);
+  let migrated = false;
   if (character.originFeat) {
     if (!character.feats.some((feat) => feat.name === character.originFeat.name)) {
       character.feats.push(character.originFeat);
     }
     character.originFeat = null;
-    save();
+    migrated = true;
   }
+  if (migrated) save();
 } catch (error) {
   storageBlocked = true;
   queueMicrotask(() =>
@@ -165,14 +167,12 @@ function stat(label, value, description, path) {
 }
 function calculatedDescription(label, fallback) {
   const c = character,
-    pb = proficiency(c.level) + c.pbExtra,
+    pb = proficiency(c.level),
     a = c.spellcasting.ability,
     m = modifier(c.abilities[a]);
   const descriptions = {
-    "SPELL ATTACK": `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
-    "SPELL SAVE DC": `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.dcExtra} = ${8 + m + pb + c.spellcasting.dcExtra}`,
-    INITIATIVE: `DEX ${signed(modifier(c.abilities.dex))} + adjustment ${c.combat.initiativeExtra} = ${signed(modifier(c.abilities.dex) + c.combat.initiativeExtra)}. Alert does not add PB automatically.`,
-    "PASSIVE PERCEPTION": `10 + WIS ${signed(modifier(c.abilities.wis))} + ${c.skills.Perception.rank} × PB ${pb} + adjustment ${c.skills.Perception.extra} = ${10 + bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra)}.`,
+    "SPELL ATTACK": `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} = ${signed(m + pb)}`,
+    "SPELL SAVE DC": `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} = ${8 + m + pb}`,
   };
   return descriptions[label] || fallback;
 }
@@ -321,13 +321,6 @@ function choice(kind) {
   );
 }
 function renderIdentity() {
-  $("#identity-fields").replaceChildren(
-    choice("class"),
-    choice("subclass"),
-    field("Level", "level", "number", { min: 1, max: 20 }),
-    choice("species"),
-    choice("background"),
-  );
   $("#character-name").value = character.name;
   const n = $("#review-notice");
   n.hidden = !character.reviewNeeded;
@@ -351,7 +344,7 @@ const leftTabs = [
   ],
   rightTabs = [
     ["items", "Inventory"],
-    ["spells", "Spellcasting"],
+    ["spells", "Spells"],
     ["notes", "Journal"],
   ];
 function renderTabs(side, tabs, active) {
@@ -429,8 +422,18 @@ for (const side of ["left", "right"])
   });
 function overview() {
   const c = character,
-    pb = proficiency(c.level) + c.pbExtra;
+    pb = proficiency(c.level);
   return [
+    head("Character details"),
+    el(
+      "div",
+      { class: "overview-identity-grid" },
+      choice("class"),
+      choice("subclass"),
+      field("Level", "level", "number", { min: 1, max: 20 }),
+      choice("species"),
+      choice("background"),
+    ),
     head("Ability scores"),
     el(
       "div",
@@ -459,38 +462,11 @@ function overview() {
         () =>
           showInfo(
             "Proficiency Bonus",
-            `Level ${c.level}: ${proficiency(c.level)} + adjustment ${c.pbExtra} = ${proficiency(c.level) + c.pbExtra}. Levels 1–4: +2; 5–8: +3; 9–12: +4; 13–16: +5; 17–20: +6.`,
+            `Level ${c.level}: ${proficiency(c.level)}. Levels 1–4: +2; 5–8: +3; 9–12: +4; 13–16: +5; 17–20: +6.`,
           ),
         "text-button",
       ),
       el("strong", {}, signed(pb)),
-    ),
-    field("Proficiency Bonus adjustment", "pbExtra", "number", {
-      min: -20,
-      max: 20,
-    }),
-    el(
-      "div",
-      { class: "stats" },
-      statCard(
-        "ARMOR CLASS",
-        c.combat.ac,
-        "Enter AC manually, including armor, shield, and effects.",
-        "combat.ac",
-      ),
-      statCard(
-        "INITIATIVE",
-        signed(modifier(c.abilities.dex) + c.combat.initiativeExtra),
-        `DEX ${signed(modifier(c.abilities.dex))} + adjustment ${c.combat.initiativeExtra}. Alert does not add PB automatically.`,
-        "combat.initiativeExtra",
-      ),
-      statCard(
-        "PASSIVE PERCEPTION",
-        10 +
-          bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra),
-        "10 + WIS modifier + proficiency/expertise + Perception adjustment. The GM determines situational Advantage or Disadvantage.",
-        "skills.Perception.extra",
-      ),
     ),
     hint(
       "Enter final scores, including background and feat changes. The library stores references only and does not add bonuses to scores.",
@@ -505,7 +481,11 @@ function combat() {
       { class: "grid three" },
       field("Armor Class (AC)", "combat.ac", "number", { min: 0, max: 99 }),
       field("Speed (ft)", "combat.speed", "number", { min: 0 }),
-      field("Initiative adjustment", "combat.initiativeExtra", "number"),
+      statCard(
+        "INITIATIVE",
+        signed(modifier(character.abilities.dex)),
+        `DEX modifier: ${signed(modifier(character.abilities.dex))}.`,
+      ),
       field("Current HP", "combat.hp", "number", {
         min: 0,
         max: character.combat.maxHp,
@@ -554,6 +534,7 @@ function combat() {
       "Track manually. Three successes stabilize you; three failures kill you. Reset when you regain HP or become stable.",
     ),
     field("Current conditions & effects", "combat.conditions", "textarea"),
+    ...spellcastingSummary(),
     hint(
       "Enter AC, HP, Hit Dice, rests, and class or species benefits manually. Temporary HP is one current value and does not stack automatically.",
     ),
@@ -562,27 +543,23 @@ function combat() {
 function skills() {
   const row = (name, ability, path, max) => {
     const v = get(path),
-      total = bonus(character, ability, v.rank, v.extra);
+      total = bonus(character, ability, v.rank);
     const choiceSelect = select("Proficiency level", path + ".rank", [
       [0, "Not proficient"],
       [1, "Proficiency"],
       ...(max === 2 ? [[2, "Expertise"]] : []),
     ]).lastChild;
     choiceSelect.setAttribute("aria-label", name + " proficiency");
-    const extra = field("Adjustment", path + ".extra", "number").lastChild;
-    extra.setAttribute("aria-label", name + " adjustment");
     return el(
       "div",
       { class: "skill-row" },
       button("", () =>
         showInfo(
           name,
-          `${SKILLS.find((s) => s[0] === name)?.[2] || "Saving throw: " + ABILITY_NAMES[ability] + "."}\n${ABILITY_NAMES[ability]} ${signed(modifier(character.abilities[ability]))} + ${v.rank} × PB ${proficiency(character.level) + character.pbExtra} + adjustment ${v.extra} = ${signed(bonus(character, ability, v.rank, v.extra))}.\nSRD 5.2.1 · pp. 7–9`,
-          path + ".extra",
+          `${SKILLS.find((s) => s[0] === name)?.[2] || "Saving throw: " + ABILITY_NAMES[ability] + "."}\n${ABILITY_NAMES[ability]} ${signed(modifier(character.abilities[ability]))} + ${v.rank} × PB ${proficiency(character.level)} = ${signed(bonus(character, ability, v.rank))}.\nSRD 5.2.1 · pp. 7–9`,
         ),
       ).appendChild(document.createTextNode(name)).parentElement,
       choiceSelect,
-      extra,
       el("output", { "aria-label": name + " bonus" }, signed(total)),
     );
   };
@@ -591,7 +568,7 @@ function skills() {
     el(
       "p",
       { class: "muted" },
-      "Each row: proficiency level · adjustment · total. Expertise = 2 × PB; saving throws can only be proficient.",
+      "Each row shows proficiency level and total. Expertise = 2 × PB; saving throws can only be proficient.",
     ),
     el("h3", {}, "Saving throws"),
     ...ABILITIES.map((a) => row(ABILITY_NAMES[a], a, "saves." + a, 1)),
@@ -728,16 +705,52 @@ function inventory() {
       : null,
   ];
 }
-function spells() {
+const FULL_CASTER_SLOTS = [
+  [2],
+  [3],
+  [4, 2],
+  [4, 3],
+  [4, 3, 2],
+  [4, 3, 3],
+  [4, 3, 3, 1],
+  [4, 3, 3, 2],
+  [4, 3, 3, 3, 1],
+  [4, 3, 3, 3, 2],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 2, 1, 1],
+];
+function slotMaximums() {
+  return ["Cleric", "Wizard"].includes(character.class?.name)
+    ? FULL_CASTER_SLOTS[character.level - 1]
+    : [];
+}
+function syncSpellSlots() {
+  const maxima = slotMaximums();
+  let changed = false;
+  character.slots.forEach((slot, index) => {
+    const max = maxima[index] || 0;
+    const used = Math.min(slot.used, max);
+    if (slot.max !== max || slot.used !== used) changed = true;
+    slot.max = max;
+    slot.used = used;
+  });
+  if (changed) save();
+}
+function spellcastingSummary() {
   const c = character,
     a = c.spellcasting.ability,
-    pb = proficiency(c.level) + c.pbExtra,
+    pb = proficiency(c.level),
     m = modifier(c.abilities[a]);
   return [
-    head(
-      "Spellcasting",
-      button("＋ Add spell", () => openPicker("spells")),
-    ),
+    head("Spellcasting"),
     el(
       "div",
       { class: "grid" },
@@ -758,15 +771,13 @@ function spells() {
       { class: "stats" },
       statCard(
         "SPELL ATTACK",
-        signed(m + pb + c.spellcasting.attackExtra),
-        `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.attackExtra} = ${signed(m + pb + c.spellcasting.attackExtra)}`,
-        "spellcasting.attackExtra",
+        signed(m + pb),
+        `${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} = ${signed(m + pb)}`,
       ),
       statCard(
         "SPELL SAVE DC",
-        8 + m + pb + c.spellcasting.dcExtra,
-        `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} + adjustment ${c.spellcasting.dcExtra}`,
-        "spellcasting.dcExtra",
+        8 + m + pb,
+        `8 + ${ABILITY_NAMES[a]} ${signed(m)} + PB ${pb} = ${8 + m + pb}`,
       ),
       statCard(
         "PREPARED",
@@ -777,53 +788,79 @@ function spells() {
         "spellcasting.preparedLimit",
       ),
     ),
-    el(
-      "div",
-      { class: "grid" },
-      field("Spell attack adjustment", "spellcasting.attackExtra", "number"),
-      field("Spell save DC adjustment", "spellcasting.dcExtra", "number"),
+    field(
+      "Other spell sources / Pact Magic",
+      "spellcasting.notes",
+      "textarea",
     ),
+  ];
+}
+function spells() {
+  const c = character,
+    maxima = slotMaximums();
+  return [
+    head("Spells", button("＋ Add spell", () => openPicker("spells"))),
     el("h3", {}, "Spell slots"),
-    el(
-      "div",
-      { class: "slots" },
-      c.slots.map((s, i) =>
-        el(
+    maxima.length
+      ? el(
           "div",
-          { class: "slot" },
-          el("span", {}, "Level " + (i + 1)),
-          el(
-            "div",
-            { class: "slot-fields" },
-            field("Maximum", "slots." + i + ".max", "number", {
-              min: 0,
-              max: 99,
-            }),
-            field("Used", "slots." + i + ".used", "number", {
-              min: 0,
-              max: s.max,
-            }),
-          ),
-          button(
-            "Use 1 slot",
-            () => {
-              s.used++;
-              save();
-              render();
-            },
-            "",
-            {
-              disabled: s.used >= s.max,
-              "aria-label": "Use level " + (i + 1) + " slot",
-            },
-          ),
+          { class: "slots compact-slots" },
+          maxima.map((max, i) => {
+            const s = c.slots[i];
+            return el(
+              "div",
+              { class: "slot compact-slot" },
+              el(
+                "div",
+                { class: "slot-summary" },
+                el("span", {}, "Level " + (i + 1)),
+                el("strong", {}, max - s.used + " / " + max),
+                el("small", {}, "remaining"),
+              ),
+              el(
+                "div",
+                { class: "slot-actions" },
+                button(
+                  "−",
+                  () => {
+                    s.used++;
+                    save();
+                    render();
+                  },
+                  "",
+                  {
+                    disabled: s.used >= max,
+                    "aria-label": "Use level " + (i + 1) + " slot",
+                  },
+                ),
+                button(
+                  "+",
+                  () => {
+                    s.used = Math.max(0, s.used - 1);
+                    save();
+                    render();
+                  },
+                  "",
+                  {
+                    disabled: s.used === 0,
+                    "aria-label": "Restore level " + (i + 1) + " slot",
+                  },
+                ),
+              ),
+            );
+          }),
+        )
+      : el(
+          "p",
+          { class: "hint" },
+          character.class
+            ? `${character.class.name} does not have spell slots in the supported class path.`
+            : "Choose a class and level to display its spell slots.",
         ),
-      ),
-    ),
     el(
       "p",
       { class: "muted" },
-      "Enter slots by class and level; reduce Used when slots are restored. Record Pact Magic and other spell sources separately below.",
+      "Slot maximums follow the selected supported class and character level. Use − to spend a slot and + to restore one.",
     ),
     ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
       .filter((l) => c.spells.some((s) => s.level === l))
@@ -844,12 +881,6 @@ function spells() {
           "No spells yet. Use “Add spell” to search or create one.",
         )
       : null,
-    el("h3", {}, "Other spell sources / Pact Magic"),
-    field(
-      "Record ability, attack/DC, uses, or separate slots",
-      "spellcasting.notes",
-      "textarea",
-    ),
   ];
 }
 function features() {
@@ -929,6 +960,7 @@ function story() {
   ];
 }
 function render() {
+  syncSpellSlots();
   renderIdentity();
   renderMobilePanel();
   renderTabs("left", leftTabs, leftTab);
@@ -953,7 +985,7 @@ function render() {
 // while typing; a completed change redraws controls without throwing away focus.
 function refreshDerived() {
   const c = character,
-    pb = proficiency(c.level) + c.pbExtra;
+    pb = proficiency(c.level);
   document
     .querySelectorAll(".ability .modifier")
     .forEach(
@@ -965,11 +997,9 @@ function refreshDerived() {
     m = modifier(c.abilities[a]);
   const values = {
     "ARMOR CLASS": c.combat.ac,
-    INITIATIVE: signed(modifier(c.abilities.dex) + c.combat.initiativeExtra),
-    "PASSIVE PERCEPTION":
-      10 + bonus(c, "wis", c.skills.Perception.rank, c.skills.Perception.extra),
-    "SPELL ATTACK": signed(m + pb + c.spellcasting.attackExtra),
-    "SPELL SAVE DC": 8 + m + pb + c.spellcasting.dcExtra,
+    INITIATIVE: signed(modifier(c.abilities.dex)),
+    "SPELL ATTACK": signed(m + pb),
+    "SPELL SAVE DC": 8 + m + pb,
     PREPARED:
       c.spells.filter((s) => s.level > 0 && s.prepared).length +
       "/" +
@@ -983,21 +1013,14 @@ function refreshDerived() {
     if (label in values) n.querySelector("strong").textContent = values[label];
   });
   document.querySelectorAll(".skill-row").forEach((row) => {
-    const input = row.querySelector("input");
-    const path = input.dataset.path.split(".");
+    const control = row.querySelector("select");
+    const path = control.dataset.path.split(".");
     const v = c[path[0]][path[1]],
       ability =
         path[0] === "saves" ? path[1] : SKILLS.find((s) => s[0] === path[1])[1];
     row.querySelector("output").textContent = signed(
-      bonus(c, ability, v.rank, v.extra),
+      bonus(c, ability, v.rank),
     );
-  });
-  document.querySelectorAll(".slot").forEach((node, i) => {
-    const s = c.slots[i];
-    node.querySelector("button").disabled = s.used >= s.max;
-    const used = node.querySelector('[data-path$=".used"]');
-    used.max = s.max;
-    if (used !== document.activeElement) used.value = s.used;
   });
   const hp = document.querySelector('[data-path="combat.hp"]');
   if (hp) {
@@ -1039,21 +1062,19 @@ function acceptInput(target) {
   }
   if (path === "combat.maxHp")
     character.combat.hp = Math.min(character.combat.hp, value);
-  if (/^slots\.\d\.max$/.test(path)) {
-    const i = Number(path.split(".")[1]);
-    character.slots[i].used = Math.min(character.slots[i].used, value);
-  }
   save();
   refreshDerived();
 }
 document.addEventListener("input", (e) => acceptInput(e.target));
 document.addEventListener("change", (e) => {
   if (!e.target.dataset.path) return;
+  const path = e.target.dataset.path;
   acceptInput(e.target);
   if (!e.target.checkValidity()) {
-    e.target.value = get(e.target.dataset.path);
+    e.target.value = get(path);
     notify("Value is out of range; the previous valid value was kept.");
   }
+  if (path === "level") render();
 });
 function editorFields(kind, entry) {
   const simple = [
@@ -1338,7 +1359,7 @@ $("#custom-form").onsubmit = (e) => {
 $("#about").onclick = () =>
   showInfo(
     "Rules & guide",
-    "Start with a name, one of the four available classes, origin, and final ability scores. Subclasses unlock at level 3 and are filtered by class. The two panels have independent tabs. Select a name or statistic to view its reference; use Add or Edit to update entries.\n\nCalculated: modifiers, PB by total level, skill/save bonuses, Initiative from DEX plus adjustment, passive Perception, spell attack/DC, and total item weight.\n\nManual: AC, HP, Hit Dice, rests, granted skills, background/species/class/feat benefits, spell slots, prepared limit, Pact Magic, and secondary spell sources. There is no automatic character builder or multiclassing.\n\nThe verified SRD subset contains Cleric, Fighter, Rogue, Wizard and one subclass for each; Human; four backgrounds; five feats; Potent Cantrip; Resourceful; Dagger; Club; Fire Bolt; and Cure Wounds. Most categories support custom entries. The English SRD source takes priority.\n\n" +
+    "Start with a name, then use Overview for class, subclass, level, species, background, and final ability scores. Subclasses unlock at level 3 and are filtered by class. The two panels have independent tabs. Select a name or statistic to view its reference; use Add or Edit to update entries.\n\nCalculated: ability modifiers, PB by total level, skill/save bonuses, Initiative from DEX, spell attack/DC, class-and-level spell slots, and total item weight.\n\nManual: AC, HP, Hit Dice, rests, granted skills, background/species/class/feat benefits, prepared limit, Pact Magic, and secondary spell sources. There is no automatic character builder or multiclassing.\n\nThe verified SRD subset contains Cleric, Fighter, Rogue, Wizard and one subclass for each; Human; four backgrounds; five feats; Potent Cantrip; Resourceful; Dagger; Club; Fire Bolt; and Cure Wounds. Most categories support custom entries. The English SRD source takes priority.\n\n" +
       attribution +
       "\n\nEscape closes dialogs and keeps editing drafts. Data is stored only in this browser.",
   );

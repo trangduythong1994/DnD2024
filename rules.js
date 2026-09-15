@@ -67,7 +67,7 @@ export const library = {
   feats: [
     entry(
       "Alert",
-      "Origin Feat. Add your Proficiency Bonus to Initiative. Immediately after rolling Initiative, you can swap your result with a willing ally in the same combat if neither is Incapacitated. Enter the adjustment in Initiative bonus and update it when PB changes.",
+      "Origin Feat. Add your Proficiency Bonus to Initiative. Immediately after rolling Initiative, you can swap your result with a willing ally in the same combat if neither is Incapacitated. Track this feat benefit manually when Initiative is rolled.",
       87,
       { category: "Origin" },
     ),

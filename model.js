@@ -31,12 +31,8 @@ export const SKILLS = [
 export const modifier = (score) => Math.floor((score - 10) / 2);
 export const proficiency = (level) => 2 + Math.floor((level - 1) / 4);
 export const signed = (n) => (n >= 0 ? "+" + n : String(n));
-export function bonus(c, ability, rank = 0, extra = 0) {
-  return (
-    modifier(c.abilities[ability]) +
-    rank * (proficiency(c.level) + c.pbExtra) +
-    extra
-  );
+export function bonus(c, ability, rank = 0) {
+  return modifier(c.abilities[ability]) + rank * proficiency(c.level);
 }
 export function freshCharacter() {
   return {
@@ -54,12 +50,10 @@ export function freshCharacter() {
     background: null,
     originFeat: null,
     abilities: Object.fromEntries(ABILITIES.map((a) => [a, 10])),
-    pbExtra: 0,
-    skills: Object.fromEntries(SKILLS.map(([s]) => [s, { rank: 0, extra: 0 }])),
-    saves: Object.fromEntries(ABILITIES.map((a) => [a, { rank: 0, extra: 0 }])),
+    skills: Object.fromEntries(SKILLS.map(([s]) => [s, { rank: 0 }])),
+    saves: Object.fromEntries(ABILITIES.map((a) => [a, { rank: 0 }])),
     combat: {
       ac: 10,
-      initiativeExtra: 0,
       speed: 30,
       hp: 0,
       maxHp: 0,
@@ -73,8 +67,6 @@ export function freshCharacter() {
     },
     spellcasting: {
       ability: "int",
-      attackExtra: 0,
-      dcExtra: 0,
       preparedLimit: 0,
       notes: "",
     },

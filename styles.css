@@ -184,11 +184,7 @@ main {
   min-height: 0;
 }
 .identity {
-  display: grid;
-  grid-template-columns: minmax(235px, 1.25fr) minmax(0, 4fr);
-  gap: 20px;
-  align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   flex: 0 0 auto;
 }
 .eyebrow {
@@ -210,10 +206,11 @@ main {
   padding: 7px 0 9px;
   margin: 0;
 }
-.identity-grid {
+.overview-identity-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 9px;
+  margin-bottom: 18px;
 }
 .choice label {
   margin-bottom: 4px;
@@ -320,14 +317,14 @@ p {
 }
 .abilities {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
 }
 .ability {
   border: 1px solid var(--line);
   border-radius: 8px;
   text-align: center;
-  padding: 15px 9px 10px;
+  padding: 9px 5px 7px;
   background: linear-gradient(155deg, #f4f6ef, var(--surface));
 }
 .ability > button {
@@ -340,13 +337,13 @@ p {
 }
 .ability .modifier {
   display: block;
-  font-size: 32px;
+  font-size: 24px;
   font-family: Georgia, serif;
-  margin: 7px 0;
+  margin: 4px 0;
 }
 .ability input {
-  width: 70px;
-  padding: 6px;
+  width: 56px;
+  padding: 4px;
   text-align: center;
   background: #fff;
   border-color: var(--green);
@@ -428,7 +425,7 @@ p {
 }
 .skill-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 122px 54px 40px;
+  grid-template-columns: minmax(120px, 1fr) 150px 48px;
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid #eaeae3;
@@ -447,13 +444,9 @@ p {
   color: var(--muted);
   margin-left: 4px;
 }
-.skill-row select,
-.skill-row input {
+.skill-row select {
   padding: 7px 5px;
   font-size: 12px;
-}
-.skill-row input {
-  text-align: center;
 }
 .skill-row output {
   text-align: right;
@@ -585,6 +578,42 @@ p {
   padding: 5px 6px;
   width: 100%;
   margin-top: 9px;
+}
+.compact-slots {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+.compact-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 9px;
+}
+.slot-summary {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.slot-summary strong {
+  color: var(--green);
+  font-size: 16px;
+}
+.slot-summary small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 10px;
+}
+.slot-actions {
+  display: flex;
+  gap: 4px;
+}
+.slot-actions button {
+  width: 32px;
+  min-height: 30px;
+  margin: 0;
+  padding: 4px;
+  font-size: 16px;
 }
 .reference-backdrop {
   position: fixed;
@@ -823,10 +852,10 @@ dialog::backdrop {
   .identity {
     gap: 14px;
   }
-  .identity-grid {
+  .overview-identity-grid {
     gap: 7px;
   }
-  .identity-grid label,
+  .overview-identity-grid label,
   .choice label {
     font-size: 11px;
   }
@@ -846,11 +875,9 @@ dialog::backdrop {
     padding: 8px 10px 7px;
   }
   .identity {
-    grid-template-columns: 1fr;
-    gap: 5px;
     margin-bottom: 6px;
   }
-  .identity-grid {
+  .overview-identity-grid {
     display: flex;
     gap: 7px;
     overflow-x: auto;
@@ -858,7 +885,7 @@ dialog::backdrop {
     scrollbar-width: thin;
     overscroll-behavior-x: contain;
   }
-  .identity-grid > * {
+  .overview-identity-grid > * {
     flex: 0 0 138px;
   }
   .mobile-panel-switch {
@@ -939,11 +966,15 @@ dialog::backdrop {
     padding: 19px 15px;
   }
   .abilities {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scrollbar-width: thin;
   }
   .ability {
-    padding: 12px 5px;
+    flex: 0 0 94px;
+    padding: 9px 5px 7px;
   }
   .ability > button {
     font-size: 10px;
@@ -952,7 +983,7 @@ dialog::backdrop {
     grid-template-columns: repeat(2, 1fr);
   }
   .skill-row {
-    grid-template-columns: minmax(100px, 1fr) 104px 44px 29px;
+    grid-template-columns: minmax(100px, 1fr) 112px 38px;
     gap: 5px;
   }
   .skill-row > button {
