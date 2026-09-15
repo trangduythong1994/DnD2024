@@ -226,6 +226,8 @@ main {
   min-width: 0;
   font-weight: 500;
   overflow-wrap: anywhere;
+  padding: 4px;
+  font-size: 10px;
 }
 .choice-line .text-button {
   padding: 6px;
@@ -590,7 +592,7 @@ p {
   margin-top: 9px;
 }
 .compact-slots {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .compact-slot {
   display: flex;
@@ -600,30 +602,27 @@ p {
   padding: 5px 6px;
 }
 .slot-summary {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
   align-items: baseline;
-  gap: 2px 8px;
+  gap: 4px;
 }
 .slot-summary strong {
   color: var(--green);
-  font-size: 16px;
+  font-size: 13px;
 }
 .slot-summary small {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 10px;
+  display: none;
 }
 .slot-actions {
   display: flex;
   gap: 4px;
 }
 .slot-actions button {
-  width: 32px;
-  min-height: 30px;
+  width: 24px;
+  min-height: 24px;
   margin: 0;
   padding: 4px;
-  font-size: 16px;
+  font-size: 12px;
 }
 .reference-backdrop {
   position: fixed;

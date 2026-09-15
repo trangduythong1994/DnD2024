@@ -962,14 +962,17 @@ function story() {
 function fitPage(target) {
   const content = target.firstElementChild;
   if (!content) return;
-  content.style.zoom = "1";
+  content.style.transform = "none";
   content.style.width = "100%";
   const available = target.clientHeight;
   if (available <= 0) return;
-  const needed = content.scrollHeight;
-  const scale = needed > available ? available / needed : 1;
+  let scale = Math.min(1, available / content.scrollHeight);
+  for (let i = 0; i < 2 && scale < 1; i++) {
+    content.style.width = 100 / scale + "%";
+    scale = Math.min(1, available / content.scrollHeight);
+  }
   content.style.width = scale < 1 ? 100 / scale + "%" : "100%";
-  content.style.zoom = String(scale);
+  content.style.transform = `scale(${scale})`;
   target.dataset.scale = scale.toFixed(3);
 }
 function fitPages() {
