@@ -199,8 +199,7 @@ function showEntry(kind, id) {
 }
 function renderReference() {
   const aside = $("#reference");
-  aside.hidden = !ref;
-  document.body.classList.toggle("reference-open", Boolean(ref));
+  $("#reference-backdrop").hidden = !ref;
   if (!ref) return;
   const content = $("#reference-content");
   content.replaceChildren();
@@ -287,6 +286,11 @@ $("#close-reference").onclick = () => {
   ref = null;
   renderReference();
 };
+$("#reference-backdrop").onclick = (event) => {
+  if (event.target !== event.currentTarget) return;
+  ref = null;
+  renderReference();
+};
 function choice(kind) {
   const entry = character[kind];
   const subclassLocked =
@@ -324,8 +328,6 @@ function renderIdentity() {
     choice("background"),
   );
   $("#character-name").value = character.name;
-  document.querySelector('[data-path="player"]').value = character.player;
-  $("#level-caption").textContent = "LEVEL " + character.level;
   const n = $("#review-notice");
   n.hidden = !character.reviewNeeded;
   n.replaceChildren(
@@ -404,7 +406,7 @@ function overview() {
   const c = character,
     pb = proficiency(c.level) + c.pbExtra;
   return [
-    head("Ability scores", el("span", { class: "badge" }, "FINAL SCORES")),
+    head("Ability scores"),
     el(
       "div",
       { class: "abilities" },
@@ -933,7 +935,6 @@ function refreshDerived() {
     );
   const p = document.querySelector(".proficiency-line strong");
   if (p) p.textContent = signed(pb);
-  $("#level-caption").textContent = "LEVEL " + c.level;
   const a = c.spellcasting.ability,
     m = modifier(c.abilities[a]);
   const values = {

@@ -5,44 +5,31 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
-      content="D&D 2024 Character Sheet. Fast local-first entry and JSON backups."
+      content="D&D 2024 Character Sheet. Fast, local-first character tracking."
     />
     <title>Character Sheet · D&D 2024</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=3" />
+    <link rel="stylesheet" href="./styles.css?v=4" />
   </head>
   <body>
     <a class="skip" href="#sheet">Skip to character sheet</a>
     <main id="sheet">
       <section class="identity" aria-label="Character details">
         <div class="name-block">
-          <div class="character-heading">
-            <span class="eyebrow">YOUR CHARACTER</span
-            ><button id="new" class="subtle new-character">
-              New character
-            </button>
-          </div>
-          <label class="sr-only" for="character-name">Character name</label
-          ><input
+          <label class="sr-only" for="character-name">Character name</label>
+          <input
             id="character-name"
             data-path="name"
             placeholder="Unnamed character"
             maxlength="200"
-          /><label
-            >Player name<input
-              data-path="player"
-              placeholder="Enter player name"
-              maxlength="200"
-          /></label>
+          />
+          <button id="new" class="subtle new-character">New character</button>
         </div>
         <div class="identity-grid" id="identity-fields"></div>
       </section>
       <div class="notice" id="review-notice" hidden></div>
       <div class="workspace">
         <section class="sheet-panel" aria-label="Character">
-          <div class="panel-caption">
-            <span>01 / CHARACTER</span><span id="level-caption"></span>
-          </div>
           <nav
             class="tabs"
             id="left-tabs"
@@ -52,9 +39,6 @@
           <div id="left-content" role="tabpanel"></div>
         </section>
         <section class="sheet-panel" aria-label="Adventuring gear">
-          <div class="panel-caption">
-            <span>02 / GEAR</span><span>Record the adventure</span>
-          </div>
           <nav
             class="tabs"
             id="right-tabs"
@@ -64,13 +48,21 @@
           <div id="right-content" role="tabpanel"></div>
         </section>
       </div>
-      <aside id="reference" class="reference" aria-label="Reference" hidden>
-        <div class="section-head">
-          <span class="eyebrow">REFERENCE</span
-          ><button id="close-reference" aria-label="Close reference">×</button>
-        </div>
-        <div id="reference-content"></div>
-      </aside>
+      <div id="reference-backdrop" class="reference-backdrop" hidden>
+        <aside
+          id="reference"
+          class="reference"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reference"
+        >
+          <div class="section-head">
+            <span class="eyebrow">REFERENCE</span
+            ><button id="close-reference" aria-label="Close reference">×</button>
+          </div>
+          <div id="reference-content"></div>
+        </aside>
+      </div>
       <footer>
         <span
           >Your data is stored in this browser and does not sync
@@ -123,6 +115,6 @@
       </div>
     </dialog>
     <div id="toast" role="status" hidden></div>
-    <script type="module" src="./app.js?v=5"></script>
+    <script type="module" src="./app.js?v=6"></script>
   </body>
 </html>

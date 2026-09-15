@@ -6,13 +6,15 @@ Live site: https://trangduythong1994.github.io/DnD2024/
 
 ## Using the sheet
 
-1. Enter the character and player details, level, class, subclass, species, and background.
+1. Enter the character name, level, class, subclass, species, and background.
 2. Enter final ability scores after any background, feat, or other adjustments. The sheet does not apply those adjustments automatically.
 3. Use the left and right tab groups independently. Select names and scores to open their rules references.
 4. Select any number of feats from the Feats tab, or add custom feats.
 5. Record proficiencies, combat values, equipment, spell slots, and prepared spells.
 
 Every valid change is saved to this browser. **New Character** clears the current sheet after confirmation. Clearing browser data can remove the character permanently.
+
+The page stays within the browser viewport. Each character panel scrolls independently when its current tab contains more content than can fit on screen. Rules references open as a centered overlay and close when you select the backdrop, the close button, or Escape.
 
 ## Rules behavior
 
