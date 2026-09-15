@@ -19,6 +19,7 @@ let character = freshCharacter(),
   storageBlocked = false,
   leftTab = "overview",
   rightTab = "items",
+  mobilePanel = "character",
   ref = null,
   pickerContext = null,
   pickerSelected = null,
@@ -305,7 +306,7 @@ function choice(kind) {
       button(
         entry?.name || (subclassLocked ? "Available at level 3" : "＋ Choose"),
         () => openPicker(kind),
-        "",
+        "editable-choice",
         {
           "aria-label": "Choose " + names[kind],
           disabled: subclassLocked,
@@ -331,10 +332,8 @@ function renderIdentity() {
   const n = $("#review-notice");
   n.hidden = !character.reviewNeeded;
   n.replaceChildren(
-    document.createTextNode(
-      "Review required after changing origin or class. " + manualNotice,
-    ),
-    button("Review complete", () => {
+    document.createTextNode("Review affected values after changing origin or class."),
+    button("Done", () => {
       character.reviewNeeded = false;
       save();
       render();
@@ -382,7 +381,33 @@ function renderTabs(side, tabs, active) {
     "aria-labelledby",
     side + "-tab-" + active,
   );
+  const mobileSelect = $("#" + side + "-mobile-tabs");
+  mobileSelect.replaceChildren(
+    ...tabs.map(([id, label]) => el("option", { value: id }, label)),
+  );
+  mobileSelect.value = active;
+  mobileSelect.onchange = () => {
+    if (side === "left") leftTab = mobileSelect.value;
+    else rightTab = mobileSelect.value;
+    render();
+  };
 }
+function renderMobilePanel() {
+  $(".workspace").dataset.mobilePanel = mobilePanel;
+  $("#show-character").setAttribute(
+    "aria-pressed",
+    String(mobilePanel === "character"),
+  );
+  $("#show-gear").setAttribute("aria-pressed", String(mobilePanel === "gear"));
+}
+$("#show-character").onclick = () => {
+  mobilePanel = "character";
+  renderMobilePanel();
+};
+$("#show-gear").onclick = () => {
+  mobilePanel = "gear";
+  renderMobilePanel();
+};
 for (const side of ["left", "right"])
   $("#" + side + "-tabs").addEventListener("keydown", (e) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
@@ -905,6 +930,7 @@ function story() {
 }
 function render() {
   renderIdentity();
+  renderMobilePanel();
   renderTabs("left", leftTabs, leftTab);
   renderTabs("right", rightTabs, rightTab);
   $("#left-content").replaceChildren(

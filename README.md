@@ -14,7 +14,7 @@ Live site: https://trangduythong1994.github.io/DnD2024/
 
 Every valid change is saved to this browser. **New Character** clears the current sheet after confirmation. Clearing browser data can remove the character permanently.
 
-The page stays within the browser viewport. Each character panel scrolls independently when its current tab contains more content than can fit on screen. Rules references open as a centered overlay and close when you select the backdrop, the close button, or Escape.
+The page stays within the browser viewport. On desktop, the Character and Gear panels scroll independently. On mobile, a Character/Gear switch gives the selected panel the available height, and a section dropdown replaces the crowded horizontal tab row. Editable fields use a tinted background and stronger border. Rules references open as a centered overlay and close when you select the backdrop, the close button, or Escape.
 
 ## Rules behavior
 

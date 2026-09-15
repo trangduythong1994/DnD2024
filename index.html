@@ -9,7 +9,7 @@
     />
     <title>Character Sheet · D&D 2024</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=4" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
   </head>
   <body>
     <a class="skip" href="#sheet">Skip to character sheet</a>
@@ -23,13 +23,23 @@
             placeholder="Unnamed character"
             maxlength="200"
           />
-          <button id="new" class="subtle new-character">New character</button>
+          <button id="new" class="new-character" aria-label="New character">
+            ＋ New
+          </button>
         </div>
         <div class="identity-grid" id="identity-fields"></div>
       </section>
       <div class="notice" id="review-notice" hidden></div>
-      <div class="workspace">
+      <nav class="mobile-panel-switch" aria-label="Sheet panels">
+        <button id="show-character" aria-pressed="true">Character</button>
+        <button id="show-gear" aria-pressed="false">Gear</button>
+      </nav>
+      <div class="workspace" data-mobile-panel="character">
         <section class="sheet-panel" aria-label="Character">
+          <label class="mobile-tab-picker">
+            <span class="sr-only">Character section</span>
+            <select id="left-mobile-tabs" aria-label="Character section"></select>
+          </label>
           <nav
             class="tabs"
             id="left-tabs"
@@ -39,6 +49,10 @@
           <div id="left-content" role="tabpanel"></div>
         </section>
         <section class="sheet-panel" aria-label="Adventuring gear">
+          <label class="mobile-tab-picker">
+            <span class="sr-only">Gear section</span>
+            <select id="right-mobile-tabs" aria-label="Gear section"></select>
+          </label>
           <nav
             class="tabs"
             id="right-tabs"
@@ -115,6 +129,6 @@
       </div>
     </dialog>
     <div id="toast" role="status" hidden></div>
-    <script type="module" src="./app.js?v=6"></script>
+    <script type="module" src="./app.js?v=7"></script>
   </body>
 </html>

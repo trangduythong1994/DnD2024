@@ -6,6 +6,9 @@ Verification date: 2026-09-14.
 - The complete user interface is in English.
 - The page has no header, Player Name field, panel subtitles, final-score label, or Export/Import controls. The compact **New Character** button is to the right of the character name.
 - The document remains exactly one viewport tall with no page-level scroll; long tab contents scroll inside their own panels on desktop and mobile.
+- The compact identity area keeps Class, Subclass, Level, Species, and Background on one row; mobile users can swipe that row horizontally.
+- Mobile displays one full-height Character or Gear panel at a time and uses a section dropdown instead of an overflowing tab strip.
+- Editable controls have a tinted background and stronger border, while calculated cards use a neutral surface.
 - Rules references open as a centered upper overlay without resizing the sheet and close when the backdrop is selected.
 - Class selection contains only Cleric, Fighter, Rogue, and Wizard.
 - Subclass selection is disabled below level 3 and is filtered to one matching option for the selected class.
