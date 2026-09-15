@@ -27,35 +27,33 @@ test("PB changes exactly at level boundaries", () => {
     [2, 2, 3, 3, 4, 4, 5, 5, 6, 6],
   );
 });
-test("proficiency and expertise use PB once or twice, with independent adjustment", () => {
+test("proficiency and expertise use PB once or twice", () => {
   const c = freshCharacter();
   c.level = 5;
   c.abilities.dex = 16;
-  assert.equal(bonus(c, "dex", 0, -1), 2);
-  assert.equal(bonus(c, "dex", 1, 1), 7);
-  assert.equal(bonus(c, "dex", 2, 1), 10);
-  c.pbExtra = 1;
-  assert.equal(bonus(c, "dex", 2, 1), 12);
+  assert.equal(bonus(c, "dex", 0), 3);
+  assert.equal(bonus(c, "dex", 1), 6);
+  assert.equal(bonus(c, "dex", 2), 9);
 });
 test("spell attack and save DC use chosen ability and PB", () => {
   const c = freshCharacter();
   c.level = 9;
   c.abilities.wis = 18;
-  assert.equal(bonus(c, "wis", 1, 2), 10);
-  assert.equal(8 + bonus(c, "wis", 1, -1), 15);
+  assert.equal(bonus(c, "wis", 1), 8);
+  assert.equal(8 + bonus(c, "wis", 1), 16);
 });
 test("round-trip includes customized items, slots, multiline text, all references", () => {
   const c = freshCharacter();
-  c.name = "Người giữ đèn";
-  c.biography = "Dòng một\nDòng hai";
+  c.name = "Lantern Keeper";
+  c.biography = "First line\nSecond line";
   c.slots[0] = { max: 4, used: 2 };
-  c.items.push({ ...newEntry(), name: "Đá", quantity: 3, weight: 1.5 });
+  c.items.push({ ...newEntry(), name: "Stone", quantity: 3, weight: 1.5 });
   c.class = { ...newEntry(), name: "Wizard" };
   assert.deepEqual(parseBackup(JSON.stringify(c)), c);
   assert.equal(totalWeight(c), 4.5);
 });
 test("bad JSON and schema versions cannot replace current character", () => {
-  assert.throws(() => parseBackup("{bad"), /cú pháp/);
+  assert.throws(() => parseBackup("{bad"), /syntax/);
   for (const data of [{}, null, { version: 2 }, []])
     assert.throws(() => parseBackup(JSON.stringify(data)));
 });
