@@ -959,28 +959,59 @@ function story() {
     ),
   ];
 }
+function fitPage(target) {
+  const content = target.firstElementChild;
+  if (!content) return;
+  content.style.zoom = "1";
+  content.style.width = "100%";
+  const available = target.clientHeight;
+  if (available <= 0) return;
+  const needed = content.scrollHeight;
+  const scale = needed > available ? available / needed : 1;
+  content.style.width = scale < 1 ? 100 / scale + "%" : "100%";
+  content.style.zoom = String(scale);
+  target.dataset.scale = scale.toFixed(3);
+}
+function fitPages() {
+  fitPage($("#left-content"));
+  fitPage($("#right-content"));
+}
 function render() {
   syncSpellSlots();
   renderIdentity();
   renderMobilePanel();
   renderTabs("left", leftTabs, leftTab);
   renderTabs("right", rightTabs, rightTab);
-  $("#left-content").replaceChildren(
-    ...{ overview, combat, skills, features, feats, origin, story }
-      [leftTab]()
-      .filter(Boolean),
+  const left = $("#left-content"),
+    right = $("#right-content");
+  left.dataset.tab = leftTab;
+  right.dataset.tab = rightTab;
+  left.replaceChildren(
+    el(
+      "div",
+      { class: "page-content" },
+      ...{ overview, combat, skills, features, feats, origin, story }
+        [leftTab]()
+        .filter(Boolean),
+    ),
   );
-  $("#right-content").replaceChildren(
-    ...{
-      items: inventory,
-      spells,
-      notes: () => listSection("notes", "Adventure journal"),
-    }
-      [rightTab]()
-      .filter(Boolean),
+  right.replaceChildren(
+    el(
+      "div",
+      { class: "page-content" },
+      ...{
+        items: inventory,
+        spells,
+        notes: () => listSection("notes", "Adventure journal"),
+      }
+        [rightTab]()
+        .filter(Boolean),
+    ),
   );
+  requestAnimationFrame(fitPages);
   if (ref?.kind) renderReference();
 }
+window.addEventListener("resize", () => requestAnimationFrame(fitPages));
 // Input changes save immediately, including the currently focused field. Only derived text is refreshed
 // while typing; a completed change redraws controls without throwing away focus.
 function refreshDerived() {

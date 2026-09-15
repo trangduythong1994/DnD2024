@@ -5,7 +5,9 @@ Verification date: 2026-09-14.
 - All automated model tests pass, covering ability modifiers, proficiency-bonus thresholds, proficiency and expertise, spell attack/DC calculations, schema validation, range checks, duplicate IDs, and safe text handling.
 - The complete user interface is in English.
 - The page has no header, Player Name field, panel subtitles, final-score label, or Export/Import controls. The compact **New Character** button is to the right of the character name.
-- The document remains exactly one viewport tall with no page-level scroll; long tab contents scroll inside their own panels on desktop and mobile.
+- The document and both sheets remain within one viewport with no page-level or panel-level scroll.
+- Desktop panels use the A4 width-to-height ratio and sit side by side like two paper sheets.
+- Active tab contents scale down only when their natural height exceeds the printable area, keeping all controls visible.
 - Overview keeps Class, Subclass, Level, Species, and Background together on one row; mobile users can swipe that row horizontally.
 - All six ability scores remain in one compact row; narrow screens can swipe the row horizontally.
 - Combat contains spellcasting setup and derived values, while the right-side Spells tab contains slots and the spell list.
